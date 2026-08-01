@@ -17,6 +17,7 @@ Based on the [Vending-Bench](https://andonlabs.com/evals/vending-bench-2) resear
 - **🎭 Realistic Simulation**: Weather effects, price elasticity, day-of-week demand variation
 - **💼 Diverse Suppliers**: Honest, negotiation-required, adversarial, and unreliable supplier types
 - **🎯 Supervisor Support**: Optional static guidelines or MCP-based supervisor (Wayfound) for performance guidance
+- **📊 Web Dashboard**: Real-time leaderboard and run visualization UI
 - **⚙️ Self-Contained**: Pure JavaScript, no native dependencies required
 
 ## Installation
@@ -30,7 +31,7 @@ Based on the [Vending-Bench](https://andonlabs.com/evals/vending-bench-2) resear
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/mini-vending-bench.git
+git clone https://github.com/kourgeorge/mini-vending-bench.git
 cd mini-vending-bench
 ```
 
@@ -95,6 +96,31 @@ npm start mcp-test mcp
 ```
 
 Output will be saved to `run_outputs/<subdirectory>/run_<timestamp>/`
+
+## Web Dashboard
+
+A real-time web UI lets you monitor benchmark runs, compare models, and browse run history.
+
+### Starting the Dashboard
+
+In two separate terminals:
+
+```bash
+# Terminal 1 — API server (port 3001)
+npm run ui:api
+
+# Terminal 2 — React frontend (port 5173)
+npm run ui:app
+```
+
+Then open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Dashboard Features
+
+- **Leaderboard**: Ranked table of all runs by final score, with model, supervisor mode, profit, days survived, and cost
+- **Run Detail**: Per-run view with daily balance/revenue/sales charts and full agent message log
+- **Live Polling**: Active runs update automatically every 3 seconds
+- **Benchmark Description**: System architecture diagram and simulation overview
 
 ### Supervisor Configuration
 
@@ -324,6 +350,9 @@ mini-vending-bench/
 │   ├── tools/              # All agent tools
 │   ├── utils/              # Config loader, chart generator
 │   └── index.js            # Main entry point
+├── api/
+│   └── server.js           # Express API server (port 3001)
+├── ui/                     # React + Vite dashboard (port 5173)
 ├── data/
 │   ├── products.json       # Product database
 │   ├── suppliers.json      # Supplier database
