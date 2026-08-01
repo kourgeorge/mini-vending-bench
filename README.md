@@ -103,19 +103,21 @@ A real-time web UI lets you monitor benchmark runs, compare models, and browse r
 
 ### Starting the Dashboard
 
-In two separate terminals:
+**Option A — single terminal (recommended):**
+
+```bash
+npm run ui:dev
+```
+
+This uses `concurrently` to start both the API server and the Vite frontend together.
+
+**Option B — two separate terminals:**
 
 ```bash
 # Terminal 1 — API server (port 3001)
 npm run ui:api
 
 # Terminal 2 — React frontend with hot reload (port 5173)
-npm run ui:dev
-```
-
-Or, to serve the pre-built UI:
-
-```bash
 npm run ui:app
 ```
 
