@@ -109,7 +109,13 @@ In two separate terminals:
 # Terminal 1 — API server (port 3001)
 npm run ui:api
 
-# Terminal 2 — React frontend (port 5173)
+# Terminal 2 — React frontend with hot reload (port 5173)
+npm run ui:dev
+```
+
+Or, to serve the pre-built UI:
+
+```bash
 npm run ui:app
 ```
 
@@ -167,13 +173,35 @@ The simulation will:
 ## Configuration
 
 ### Agent Configuration
-- **model**: OpenAI model name (e.g., `gpt-5-mini`, `gpt-4o`, `o1`)
-- **apiKey**: Your OpenAI API key
+- **model**: Model name (e.g., `gpt-5-mini`, `gpt-4o`, `o1`, or any model served by your LiteLLM proxy)
+- **apiKey**: Your API key
+- **baseURL** *(optional)*: Custom OpenAI-compatible endpoint (see LiteLLM below)
 
 ### Supplier Configuration
 Suppliers are simulated using a separate LLM to generate realistic email responses.
-- **model**: OpenAI model name (default: `gpt-5-mini`)
-- **apiKey**: Your OpenAI API key
+- **model**: Model name (default: `gpt-5-mini`)
+- **apiKey**: Your API key
+- **baseURL** *(optional)*: Custom endpoint for the supplier model
+
+### Using LiteLLM or Other OpenAI-Compatible Providers
+
+You can point the benchmark at any OpenAI-compatible API — including [LiteLLM](https://github.com/BerriAI/litellm), Ollama, Azure OpenAI, or other proxies — by setting `baseURL` in `config.json`:
+
+```json
+{
+  "agent": {
+    "model": "claude-opus-4-5",
+    "apiKey": "anything",
+    "baseURL": "http://localhost:4000"
+  },
+  "supplier": {
+    "model": "gpt-5-mini",
+    "apiKey": "sk-your-openai-key-here"
+  }
+}
+```
+
+This lets you benchmark non-OpenAI models (Anthropic Claude, Gemini, Llama, etc.) through a LiteLLM proxy while keeping the supplier on a standard OpenAI model.
 
 ### Simulation Parameters
 - **durationDays**: Number of days to simulate (default: 30)
