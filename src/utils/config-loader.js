@@ -14,11 +14,11 @@ const SupervisorSchema = z.object({
 });
 
 // Zod schema for configuration validation
-// Only OpenAI models are supported
 const ConfigSchema = z.object({
   agent: z.object({
     model: z.string(),
     apiKey: z.string().min(1, 'Agent API key is required'),
+    baseURL: z.string().url().optional(),
   }),
   simulation: z.object({
     durationDays: z.number().int().positive(),
@@ -31,6 +31,7 @@ const ConfigSchema = z.object({
   supplier: z.object({
     model: z.string(),
     apiKey: z.string().min(1, 'Supplier API key is required'),
+    baseURL: z.string().url().optional(),
   }),
   features: z.object({
     adversarialSuppliers: z.boolean(),

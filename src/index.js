@@ -3,8 +3,9 @@
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { Agent, run, user, assistant, MCPServerStreamableHttp } from "@openai/agents";
-import { openai } from "@ai-sdk/openai";
+import { Agent, run, user, assistant, MCPServerStreamableHttp, setTracingDisabled } from "@openai/agents";
+setTracingDisabled(true);
+import { openai, createOpenAI } from "@ai-sdk/openai";
 import { loadConfig } from "./utils/config-loader.js";
 import {
   initializeState,
@@ -34,22 +35,25 @@ import {
   emptySlot,
 } from "./tools/vending-machine.js";
 import { viewInbox, readEmail, sendEmail, placeOrder } from "./tools/email.js";
+import { withLogging } from "./utils/tool-logger.js";
+import { extractUsage, calculateCost } from "./utils/cost-calculator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
  * Get Vercel AI SDK model (for supplier responses)
- * Only OpenAI models are supported
  */
 function getVercelModel(config) {
-  const { model, apiKey } = config;
+  const { model, apiKey, baseURL } = config;
+  if (baseURL) {
+    return createOpenAI({ apiKey, baseURL })(model);
+  }
   return openai(model, { apiKey });
 }
 
 /**
  * Get agent model for OpenAI Agents SDK
- * Only OpenAI models are supported
  */
 function getAgentModel(config) {
   return config.model; // Just pass the model name as a string
@@ -186,6 +190,9 @@ async function main() {
 
   // Set API key for OpenAI Agents SDK
   process.env.OPENAI_API_KEY = config.agent.apiKey;
+  if (config.agent.baseURL) {
+    process.env.OPENAI_BASE_URL = config.agent.baseURL;
+  }
 
   // Create agent model
   const agentModel = getAgentModel(config.agent);
@@ -229,6 +236,11 @@ async function main() {
     }
   }
 
+  // Helper to get current day for tool call logging
+  const getCurrentDay = () => {
+    try { return loadState(runOutputDir).simulation.current_day; } catch { return null; }
+  };
+
   // Initialize tools (removed wait_for_next_day - day advancement happens in main loop)
   const tools = [
     getBalance(runOutputDir),
@@ -251,7 +263,7 @@ async function main() {
     restockMachine(runOutputDir),
     setPrice(runOutputDir),
     emptySlot(runOutputDir),
-  ];
+  ].map(t => withLogging(t, runOutputDir, getCurrentDay));
 
   // Create agent
   const agent = new Agent({
@@ -370,6 +382,25 @@ async function main() {
       // Log LLM response
       const response = result.finalOutput || "Agent completed";
       consoleLogger.llmResponse(response);
+
+      // Log token usage and cost
+      const usage = extractUsage(result);
+      const cost = calculateCost(config.agent.model, usage.inputTokens, usage.outputTokens);
+      fileLogger.appendJSONL('costs.jsonl', {
+        timestamp: new Date().toISOString(),
+        day: currentState.simulation.current_day,
+        model: config.agent.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+        requests: usage.requests,
+        costUsd: cost,
+      });
+      if (cost != null) {
+        consoleLogger.info(`💸 Day cost: $${cost.toFixed(4)} (${usage.inputTokens}in + ${usage.outputTokens}out tokens)`);
+      } else {
+        consoleLogger.info(`📊 Tokens: ${usage.inputTokens}in + ${usage.outputTokens}out (no pricing for ${config.agent.model})`);
+      }
 
       // Add assistant response to conversation history
       if (response) {
@@ -514,6 +545,29 @@ async function main() {
 
   fileLogger.writeFinalScore(finalScore);
   consoleLogger.finalResults(finalScore);
+
+  // Summarize total costs
+  const { readFileSync, existsSync } = await import('fs');
+  const costsPath = join(runOutputDir, 'costs.jsonl');
+  if (existsSync(costsPath)) {
+    const costEntries = readFileSync(costsPath, 'utf-8').trim().split('\n').filter(Boolean).map(l => JSON.parse(l));
+    const totalInput = costEntries.reduce((s, e) => s + (e.inputTokens ?? 0), 0);
+    const totalOutput = costEntries.reduce((s, e) => s + (e.outputTokens ?? 0), 0);
+    const totalCost = costEntries.reduce((s, e) => s + (e.costUsd ?? 0), 0);
+    const hasCost = costEntries.some(e => e.costUsd != null);
+    fileLogger.writeJSON('final_cost.json', {
+      model: config.agent.model,
+      totalInputTokens: totalInput,
+      totalOutputTokens: totalOutput,
+      totalTokens: totalInput + totalOutput,
+      totalCostUsd: hasCost ? totalCost : null,
+      days: costEntries.length,
+      generated_at: new Date().toISOString(),
+    });
+    if (hasCost) {
+      consoleLogger.info(`💸 Total LLM cost: $${totalCost.toFixed(4)} (${totalInput + totalOutput} tokens)`);
+    }
+  }
 
   // Generate chart data
   consoleLogger.info("Generating chart data...");

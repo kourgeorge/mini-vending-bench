@@ -1,0 +1,81 @@
+.root {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.slot {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 80px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.slot:hover {
+  border-color: var(--accent);
+}
+
+.slot.empty {
+  opacity: 0.4;
+}
+
+.fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  opacity: 0.15;
+  transition: height 0.3s ease;
+}
+
+.content {
+  position: relative;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  justify-content: center;
+}
+
+.product {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.qty {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.price {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.emptyLabel {
+  font-size: 18px;
+  color: var(--text-dim);
+  text-align: center;
+}

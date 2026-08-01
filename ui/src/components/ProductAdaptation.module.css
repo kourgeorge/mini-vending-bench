@@ -1,0 +1,160 @@
+.root {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.swapCount {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.swapNum {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-light);
+}
+
+.swapLabel {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slot {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.slotHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.slotKey {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.slotSwaps {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.timelineEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.arrow {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.productChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chipDay {
+  font-size: 10px;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+.chipPrice {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.85;
+  padding-left: 2px;
+  border-left: 1px solid currentColor;
+  margin-left: 2px;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.statsSection {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.statsHead {
+  display: grid;
+  grid-template-columns: 1fr 120px 90px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: 1fr 120px 90px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.statsRow:hover {
+  background: var(--surface2);
+}
+
+.statsProduct {
+  font-weight: 600;
+}
+
+.statsRight {
+  text-align: right;
+  color: var(--text-muted);
+}
