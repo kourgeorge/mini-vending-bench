@@ -12,7 +12,7 @@ function Card({ label, value, sub, color }) {
   );
 }
 
-export default function StatCards({ state, summaries, totalSwaps, totalCostUsd, totalTokens }) {
+export default function StatCards({ state, summaries, totalSwaps, totalCostUsd, totalTokens, totalInputTokens, totalOutputTokens, totalToolCalls }) {
   const { finances, simulation, vending_machine, storage } = state;
 
   const profit = finances.total_revenue - finances.total_expenses;
@@ -67,6 +67,22 @@ export default function StatCards({ state, summaries, totalSwaps, totalCostUsd, 
         value={totalCostUsd != null ? `$${totalCostUsd.toFixed(4)}` : '—'}
         sub={totalTokens > 0 ? `${(totalTokens / 1000).toFixed(0)}K tokens` : 'no pricing data'}
         color={totalCostUsd != null ? 'var(--yellow)' : undefined}
+      />
+      <Card
+        label="Input Tokens"
+        value={totalInputTokens > 0 ? `${(totalInputTokens / 1000).toFixed(1)}K` : '—'}
+        sub="cumulative"
+      />
+      <Card
+        label="Output Tokens"
+        value={totalOutputTokens > 0 ? `${(totalOutputTokens / 1000).toFixed(1)}K` : '—'}
+        sub="cumulative"
+      />
+      <Card
+        label="Tool Calls"
+        value={totalToolCalls}
+        sub="total so far"
+        color={totalToolCalls > 0 ? 'var(--accent-light)' : undefined}
       />
     </div>
   );

@@ -12,29 +12,29 @@ import {
   saveState,
   loadState,
   calculateNetWorth,
-} from "./simulation/state.js";
+} from "./env/simulation/state.js";
 import { ConsoleLogger } from "./logging/console-logger.js";
 import { FileLogger } from "./logging/file-logger.js";
-import { SupplierResponseGenerator } from "./suppliers/response-generator.js";
+import { SupplierResponseGenerator } from "./env/suppliers/response-generator.js";
 import { buildAgentInstructions } from "./agent/instructions.js";
 import { generateCharts } from "./utils/chart-generator.js";
 
 // Import tools
-import { getBalance, viewTransactions } from "./tools/finance.js";
-import { getCurrentDate } from "./tools/time.js";
-import { simulateCustomerPurchases } from "./simulation/customer-purchases.js";
-import { processDeliveries } from "./simulation/deliveries.js";
-import { updateWeather } from "./simulation/weather.js";
-import { addTransaction } from "./simulation/state.js";
-import { getStorageInventory, checkDeliveries } from "./tools/storage.js";
-import { getAvailableProducts, searchSuppliers } from "./tools/research.js";
+import { getBalance, viewTransactions } from "./env/tools/finance.js";
+import { getCurrentDate } from "./env/tools/time.js";
+import { simulateCustomerPurchases } from "./env/simulation/customer-purchases.js";
+import { processDeliveries } from "./env/simulation/deliveries.js";
+import { updateWeather } from "./env/simulation/weather.js";
+import { addTransaction } from "./env/simulation/state.js";
+import { getStorageInventory, checkDeliveries } from "./env/tools/storage.js";
+import { getAvailableProducts, searchSuppliers } from "./env/tools/research.js";
 import {
   viewVendingMachine,
   restockMachine,
   setPrice,
   emptySlot,
-} from "./tools/vending-machine.js";
-import { viewInbox, readEmail, sendEmail, placeOrder } from "./tools/email.js";
+} from "./env/tools/vending-machine.js";
+import { viewInbox, readEmail, sendEmail, placeOrder } from "./env/tools/email.js";
 import { withLogging } from "./utils/tool-logger.js";
 import { extractUsage, calculateCost } from "./utils/cost-calculator.js";
 
@@ -180,6 +180,12 @@ async function main() {
   fileLogger.writeConfig(config);
 
   consoleLogger.success("Benchmark initialized");
+
+  // Log model configuration
+  const agentBaseURL = config.agent.baseURL ?? 'default (OpenAI)';
+  const supplierBaseURL = config.supplier.baseURL ?? 'default (OpenAI)';
+  consoleLogger.info(`Agent model:    ${config.agent.model}  [${agentBaseURL}]`);
+  consoleLogger.info(`Supplier model: ${config.supplier.model}  [${supplierBaseURL}]`);
 
   // Create supplier response generator (uses Vercel AI SDK directly)
   const supplierModel = getVercelModel(config.supplier);

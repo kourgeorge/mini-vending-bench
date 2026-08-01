@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import { getSupplierPrompt } from '../../data/supplier-prompts.js';
+import { getSupplierPrompt } from '../../../data/supplier-prompts.js';
 
 /**
  * Supplier response generator using LLM

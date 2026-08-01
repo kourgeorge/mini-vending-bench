@@ -49,9 +49,9 @@ export default function Leaderboard({ onSelectRun }) {
   const SORT_OPTIONS = [
     { key: 'avgNetWorth', label: 'Net Worth' },
     { key: 'avgProfit', label: 'Profit' },
-    { key: 'avgBalance', label: 'Balance' },
     { key: 'avgUnitsSold', label: 'Units Sold' },
     { key: 'avgDaysSurvived', label: 'Days Survived' },
+    { key: 'avgToolCalls', label: 'Tool Calls' },
     { key: 'successRate', label: 'Success Rate' },
   ];
 
@@ -200,12 +200,11 @@ export default function Leaderboard({ onSelectRun }) {
             <span className={styles.colRank}>#</span>
             <span className={styles.colModel}>Model</span>
             <span className={styles.colNum}>Runs</span>
-            <span className={styles.colNum}>Avg Balance</span>
             <span className={styles.colNum}>Avg Net Worth</span>
             <span className={styles.colNum}>Avg Profit</span>
-            <span className={styles.colNum}>Avg Revenue</span>
             <span className={styles.colNum}>Avg Units</span>
             <span className={styles.colNum}>Avg Days</span>
+            <span className={styles.colNum}>Avg Tool Calls</span>
             <span className={styles.colNum}>Success</span>
             <span className={styles.colNum}>Avg Cost</span>
           </div>
@@ -227,14 +226,13 @@ export default function Leaderboard({ onSelectRun }) {
                     <span className={styles.modelName}>{entry.model}</span>
                   </span>
                   <span className={styles.colNum}>{entry.runs}</span>
-                  <span className={`${styles.colNum} ${styles.highlight}`}>${fmt(entry.avgBalance)}</span>
                   <span className={`${styles.colNum} ${styles.highlight}`}>${fmt(entry.avgNetWorth)}</span>
                   <span className={`${styles.colNum} ${entry.avgProfit >= 0 ? styles.green : styles.red}`}>
                     {entry.avgProfit >= 0 ? '+' : ''}${fmt(entry.avgProfit)}
                   </span>
-                  <span className={styles.colNum}>${fmt(entry.avgTotalRevenue)}</span>
                   <span className={styles.colNum}>{Math.round(entry.avgUnitsSold)}</span>
                   <span className={styles.colNum}>{fmt(entry.avgDaysSurvived)}</span>
+                  <span className={styles.colNum}>{Math.round(entry.avgToolCalls ?? 0)}</span>
                   <span className={`${styles.colNum} ${entry.successRate === 1 ? styles.green : entry.successRate === 0 ? styles.red : ''}`}>
                     {pct(entry.successRate)}
                   </span>
@@ -255,14 +253,13 @@ export default function Leaderboard({ onSelectRun }) {
                       <span className={styles.runId}>{run.startedAt ? new Date(run.startedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : run.runId}</span>
                     </span>
                     <span className={styles.colNum}>1</span>
-                    <span className={`${styles.colNum} ${styles.highlight}`}>${run.balance?.toFixed(2)}</span>
                     <span className={`${styles.colNum} ${styles.highlight}`}>${run.netWorth?.toFixed(2)}</span>
                     <span className={`${styles.colNum} ${run.profit >= 0 ? styles.green : styles.red}`}>
                       {run.profit >= 0 ? '+' : ''}${run.profit?.toFixed(2)}
                     </span>
-                    <span className={styles.colNum}>${run.totalRevenue?.toFixed(2)}</span>
                     <span className={styles.colNum}>{run.unitsSold}</span>
                     <span className={styles.colNum}>{run.daysSurvived}</span>
+                    <span className={styles.colNum}>{run.toolCallCount ?? '—'}</span>
                     <span className={styles.colNum}>—</span>
                     <span className={`${styles.colNum} ${styles.yellow}`}>
                       {run.totalCostUsd != null ? `$${run.totalCostUsd.toFixed(4)}` : '—'}

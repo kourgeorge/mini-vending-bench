@@ -73,6 +73,9 @@ export default function RunDashboard({ subdir, runId, status, model }) {
     ? costEntries.reduce((sum, e) => sum + (e.costUsd ?? 0), 0)
     : null;
   const totalTokens = costEntries.reduce((sum, e) => sum + (e.totalTokens ?? 0), 0);
+  const totalInputTokens = costEntries.reduce((sum, e) => sum + (e.inputTokens ?? 0), 0);
+  const totalOutputTokens = costEntries.reduce((sum, e) => sum + (e.outputTokens ?? 0), 0);
+  const totalToolCalls = calls.length;
 
   return (
     <div className={styles.root}>
@@ -93,7 +96,7 @@ export default function RunDashboard({ subdir, runId, status, model }) {
       </div>
 
       {/* Stat cards */}
-      <StatCards state={s} summaries={sums} totalSwaps={totalSwaps} totalCostUsd={totalCostUsd} totalTokens={totalTokens} />
+      <StatCards state={s} summaries={sums} totalSwaps={totalSwaps} totalCostUsd={totalCostUsd} totalTokens={totalTokens} totalInputTokens={totalInputTokens} totalOutputTokens={totalOutputTokens} totalToolCalls={totalToolCalls} />
 
       {/* Charts row */}
       <div className={styles.chartsGrid}>

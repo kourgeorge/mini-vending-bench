@@ -177,6 +177,8 @@ app.get('/api/leaderboard', (req, res) => {
       const tsMatch = runId.match(/run_(\d+)/);
       const startedAt = tsMatch ? new Date(parseInt(tsMatch[1])).toISOString() : null;
 
+      const toolCallCount = readJSONL(join(runDir, 'tool_calls.jsonl')).length;
+
       if (!byModel[model]) byModel[model] = [];
       byModel[model].push({
         subdir,
@@ -185,6 +187,7 @@ app.get('/api/leaderboard', (req, res) => {
         ...finalScore,
         totalCostUsd: finalCost?.totalCostUsd ?? null,
         totalTokens: finalCost?.totalTokens ?? null,
+        toolCallCount,
         dailySummaries: summaries,
       });
     }
@@ -208,13 +211,11 @@ app.get('/api/leaderboard', (req, res) => {
     return {
       model,
       runs: runs.length,
-      avgBalance: avg('balance'),
       avgNetWorth: avg('netWorth'),
       avgProfit: avg('profit'),
-      avgTotalRevenue: avg('totalRevenue'),
-      avgTotalExpenses: avg('totalExpenses'),
       avgUnitsSold: avg('unitsSold'),
       avgDaysSurvived: avg('daysSurvived'),
+      avgToolCalls: avg('toolCallCount'),
       successRate: completedFull / runs.length,
       bestBalance: Math.max(...runs.map(r => r.balance)),
       worstBalance: Math.min(...runs.map(r => r.balance)),
