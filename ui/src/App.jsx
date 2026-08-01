@@ -70,29 +70,23 @@ export default function App() {
           </a>
 
           <div className={styles.navLinks}>
-            {page === 'run' ? (
-              <button className={styles.navLink} onClick={handleBack}>← All Runs</button>
-            ) : (
-              <>
-                <a
-                  href="#"
-                  className={`${styles.navLink} ${page === 'home' ? styles.navLinkActive : ''}`}
-                  onClick={e => { e.preventDefault(); setPage('home'); }}
-                >Leaderboard</a>
-                <a
-                  href="#"
-                  className={`${styles.navLink} ${page === 'runs' ? styles.navLinkActive : ''}`}
-                  onClick={e => { e.preventDefault(); setPage('runs'); }}
-                >Runs</a>
-                <div className={styles.navDivider} />
-                <a
-                  className={styles.navLink}
-                  href="/benchmark.html"
-                  target="_blank"
-                  rel="noreferrer"
-                >📄 Docs</a>
-              </>
-            )}
+            <a
+              href="#"
+              className={`${styles.navLink} ${page === 'home' ? styles.navLinkActive : ''}`}
+              onClick={e => { e.preventDefault(); setPage('home'); }}
+            >Leaderboard</a>
+            <a
+              href="#"
+              className={`${styles.navLink} ${page === 'runs' ? styles.navLinkActive : ''}`}
+              onClick={e => { e.preventDefault(); setPage('runs'); }}
+            >Runs</a>
+            <div className={styles.navDivider} />
+            <a
+              className={styles.navLink}
+              href="/benchmark.html"
+              target="_blank"
+              rel="noreferrer"
+            >📄 Docs</a>
           </div>
         </div>
       </nav>
@@ -168,9 +162,6 @@ export default function App() {
       {page === 'run' && selectedRun && (
         <main className={styles.subPage}>
           <div className={styles.subPageContent}>
-            <button className={styles.backBtn} onClick={handleBack}>
-              ← All Runs
-            </button>
             <RunDashboard
               subdir={selectedRun.subdir}
               runId={selectedRun.runId}
