@@ -23,7 +23,7 @@ function pct(n) {
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export default function Leaderboard({ onSelectRun }) {
+export default function Leaderboard({ onSelectRun, embedded = false }) {
   const [sortKey, setSortKey] = useState('avgNetWorth');
   const [expandedModel, setExpandedModel] = useState(null);
 
@@ -81,13 +81,15 @@ export default function Leaderboard({ onSelectRun }) {
 
   return (
     <div className={styles.root}>
-      <div className={styles.titleRow}>
-        <h1 className={styles.title}>🏆 Leaderboard</h1>
-        <div className={styles.titleRight}>
-          <span className={styles.hint}>{data.length} models · {data.reduce((s, m) => s + m.runs, 0)} total runs</span>
-          <button className={styles.refreshBtn} onClick={() => refetch()}>↺ Refresh</button>
+      {!embedded && (
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>🏆 Leaderboard</h1>
+          <div className={styles.titleRight}>
+            <span className={styles.hint}>{data.length} models · {data.reduce((s, m) => s + m.runs, 0)} total runs</span>
+            <button className={styles.refreshBtn} onClick={() => refetch()}>↺ Refresh</button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Balance progression chart */}
       <div className={styles.chartCard}>
