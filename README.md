@@ -378,9 +378,8 @@ mini-vending-bench/
 │   ├── tools/              # All agent tools
 │   ├── utils/              # Config loader, chart generator
 │   └── index.js            # Main entry point
-├── api/
-│   └── server.js           # Express API server (port 3001)
 ├── ui/                     # React + Vite dashboard (port 5173)
+│   └── server.js           # Express API server (port 3001)
 ├── data/
 │   ├── products.json       # Product database
 │   ├── suppliers.json      # Supplier database
