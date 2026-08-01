@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "ui:api": "cd api && node server.js",
+    "ui:api": "cd ui && node server.js",
     "ui:app": "cd ui && npx vite",
     "ui:dev": "concurrently -n api,ui -c cyan,magenta \"npm run ui:api\" \"npm run ui:app\""
   },
