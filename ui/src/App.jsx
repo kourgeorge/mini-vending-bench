@@ -39,6 +39,12 @@ export default function App() {
                   className={`${styles.navBtn} ${page === 'leaderboard' ? styles.navActive : ''}`}
                   onClick={() => setPage('leaderboard')}
                 >🏆 Leaderboard</button>
+                <a
+                  className={styles.navBtn}
+                  href="/benchmark.html"
+                  target="_blank"
+                  rel="noreferrer"
+                >📄 Benchmark</a>
               </>
             )}
           </nav>

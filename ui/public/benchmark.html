@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Vending Bench — AI Agent Benchmark</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0f1117;
+      --surface:      #1a1d27;
+      --surface2:     #22263a;
+      --surface3:     #2a2f45;
+      --border:       #2d3148;
+      --accent:       #6366f1;
+      --accent-light: #818cf8;
+      --accent-dim:   #3730a3;
+      --green:        #22c55e;
+      --green-dim:    #14532d;
+      --red:          #ef4444;
+      --yellow:       #f59e0b;
+      --yellow-dim:   #78350f;
+      --blue:         #3b82f6;
+      --purple:       #a855f7;
+      --teal:         #14b8a6;
+      --pink:         #ec4899;
+      --text:         #e2e8f0;
+      --text-muted:   #94a3b8;
+      --text-dim:     #64748b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Nav ────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,17,23,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 52px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
+    .nav-logo .icon { font-size: 20px; }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a {
+      padding: 5px 12px; border-radius: 6px; font-size: 13px;
+      color: var(--text-muted); transition: all .15s;
+    }
+    .nav-links a:hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,102,241,.18) 0%, transparent 70%);
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.3);
+      color: var(--accent-light); border-radius: 100px;
+      padding: 4px 14px; font-size: 12px; font-weight: 600;
+      letter-spacing: .04em; text-transform: uppercase; margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px); font-weight: 800;
+      letter-spacing: -.03em; line-height: 1.1; margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--accent-light); }
+    .hero p {
+      font-size: 18px; color: var(--text-muted); max-width: 600px;
+      margin: 0 auto 40px;
+    }
+    .hero-stats {
+      display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+      padding-top: 40px; border-top: 1px solid var(--border); margin-top: 40px;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .num {
+      display: block; font-size: 32px; font-weight: 800;
+      color: var(--accent-light); letter-spacing: -.02em;
+    }
+    .hero-stat .lbl { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+    /* ── Section ────────────────────────────────────────── */
+    section { padding: 72px 0; border-top: 1px solid var(--border); }
+    .section-label {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--accent-light); margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 28px; font-weight: 800; letter-spacing: -.02em;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      color: var(--text-muted); font-size: 16px; max-width: 680px;
+      margin-bottom: 40px;
+    }
+    h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+
+    /* ── Cards grid ─────────────────────────────────────── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+    }
+    .card-icon { font-size: 24px; margin-bottom: 10px; }
+    .card h3 { font-size: 15px; margin-bottom: 6px; }
+    .card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* ── Day cycle ──────────────────────────────────────── */
+    .cycle {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 2px;
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .cycle-step {
+      background: var(--surface); padding: 18px 16px;
+      display: flex; flex-direction: column; gap: 6px;
+      position: relative;
+    }
+    .cycle-step::after {
+      content: '→'; position: absolute; right: -10px; top: 50%;
+      transform: translateY(-50%); color: var(--border); font-size: 16px;
+      z-index: 2;
+    }
+    .cycle-step:last-child::after { display: none; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent-dim); color: var(--accent-light);
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cycle-step .title { font-size: 13px; font-weight: 700; }
+    .cycle-step .desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ── Tool cards ─────────────────────────────────────── */
+    .tool-group { margin-bottom: 40px; }
+    .tool-group-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tool-group-icon { font-size: 20px; }
+    .tool-group-header h3 { font-size: 15px; font-weight: 700; margin: 0; color: var(--text); }
+    .tool-group-header span { font-size: 12px; color: var(--text-dim); }
+
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .tool {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; transition: border-color .2s;
+    }
+    .tool:hover { border-color: var(--accent); }
+    .tool-name {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px; font-weight: 700; color: var(--accent-light);
+      margin-bottom: 6px;
+    }
+    .tool-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.45; }
+    .params { display: flex; flex-wrap: wrap; gap: 5px; }
+    .param {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px; padding: 2px 8px; border-radius: 4px;
+      background: var(--surface2); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .param.req { color: var(--yellow); border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.08); }
+    .param.none { color: var(--text-dim); font-style: italic; }
+
+    /* ── Supplier table ─────────────────────────────────── */
+    .supplier-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;
+    }
+    .supplier-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px;
+    }
+    .supplier-tag {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 2px 10px; border-radius: 100px; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .tag-honest   { background: rgba(34,197,94,.12);  color: var(--green);  border: 1px solid rgba(34,197,94,.25); }
+    .tag-negot    { background: rgba(99,102,241,.12); color: var(--accent-light); border: 1px solid rgba(99,102,241,.25); }
+    .tag-advers   { background: rgba(239,68,68,.12);  color: var(--red);    border: 1px solid rgba(239,68,68,.25); }
+    .tag-unreliab { background: rgba(245,158,11,.12); color: var(--yellow); border: 1px solid rgba(245,158,11,.25); }
+    .supplier-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .supplier-card p  { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+
+    /* ── Supervisor modes ───────────────────────────────── */
+    .modes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .mode-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; position: relative; overflow: hidden;
+    }
+    .mode-card::before {
+      content: ''; position: absolute; inset: 0 0 auto 0;
+      height: 3px;
+    }
+    .mode-none::before    { background: var(--text-dim); }
+    .mode-minimal::before { background: var(--blue); }
+    .mode-static::before  { background: var(--green); }
+    .mode-mcp::before     { background: var(--purple); }
+    .mode-tag {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px; font-weight: 700; margin-bottom: 8px; display: block;
+    }
+    .mode-none .mode-tag    { color: var(--text-muted); }
+    .mode-minimal .mode-tag { color: var(--blue); }
+    .mode-static .mode-tag  { color: var(--green); }
+    .mode-mcp .mode-tag     { color: var(--purple); }
+    .mode-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .mode-card p  { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+
+    /* ── Metrics ────────────────────────────────────────── */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .metric {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px;
+    }
+    .metric-icon { font-size: 22px; margin-bottom: 8px; }
+    .metric h3 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .metric p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+    .metric.primary { border-color: var(--accent); background: rgba(99,102,241,.06); }
+    .metric.primary h3 { color: var(--accent-light); }
+
+    /* ── Config table ───────────────────────────────────── */
+    .config-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .config-table th {
+      text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim);
+      background: var(--surface2); border-bottom: 1px solid var(--border);
+    }
+    .config-table th:first-child { border-radius: 8px 0 0 0; }
+    .config-table th:last-child  { border-radius: 0 8px 0 0; }
+    .config-table td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .config-table tr:last-child td { border-bottom: none; }
+    .config-table tr:hover td { background: var(--surface2); }
+    .config-table .key {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: var(--accent-light); white-space: nowrap;
+    }
+    .config-table .default { color: var(--text-dim); font-family: monospace; }
+    .config-table .desc { color: var(--text-muted); }
+    .config-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+
+    /* ── Architecture ───────────────────────────────────── */
+    .arch {
+      display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 0;
+      align-items: center;
+    }
+    @media (max-width: 700px) {
+      .arch { grid-template-columns: 1fr; }
+      .arch-arrow { transform: rotate(90deg); }
+    }
+    .arch-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 16px; text-align: center;
+    }
+    .arch-box .icon { font-size: 28px; margin-bottom: 8px; }
+    .arch-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .arch-box p { font-size: 12px; color: var(--text-muted); }
+    .arch-box.highlight { border-color: var(--accent); background: rgba(99,102,241,.06); }
+    .arch-arrow { text-align: center; color: var(--text-dim); font-size: 22px; padding: 0 8px; }
+
+    /* ── Output files ───────────────────────────────────── */
+    .output-files { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+    .output-file {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .output-file .filename {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px; color: var(--yellow); font-weight: 600;
+      flex-shrink: 0;
+    }
+    .output-file .filedesc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+    /* ── Weather ────────────────────────────────────────── */
+    .weather-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .weather-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; text-align: center;
+    }
+    .weather-card .icon { font-size: 28px; margin-bottom: 6px; }
+    .weather-card .name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .weather-card .effect { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Diagram ────────────────────────────────────────── */
+    .diagram-section {
+      padding: 48px 0 56px;
+      border-top: 1px solid var(--border);
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(99,102,241,.04) 0%, transparent 70%);
+    }
+    .diagram-label {
+      text-align: center; margin-bottom: 28px;
+    }
+    .diagram-label span {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--accent-light);
+    }
+    .diagram-label h2 {
+      font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+      margin-top: 6px; margin-bottom: 0;
+    }
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 20px 24px;
+      overflow: hidden;
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0; text-align: center;
+      color: var(--text-dim); font-size: 13px;
+    }
+
+    /* ── Pill ────────────────────────────────────────────── */
+    .pill {
+      display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 2px 10px; border-radius: 100px;
+      background: var(--surface2); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .pill.green { background: rgba(34,197,94,.1); color: var(--green); border-color: rgba(34,197,94,.25); }
+    .pill.yellow { background: rgba(245,158,11,.1); color: var(--yellow); border-color: rgba(245,158,11,.25); }
+    .pill.red { background: rgba(239,68,68,.1); color: var(--red); border-color: rgba(239,68,68,.25); }
+
+    /* ── Two-col ─────────────────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Info box ────────────────────────────────────────── */
+    .infobox {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px;
+    }
+    .infobox h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+    .infobox ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .infobox ul li {
+      font-size: 13px; color: var(--text-muted);
+      padding-left: 18px; position: relative; line-height: 1.45;
+    }
+    .infobox ul li::before {
+      content: '·'; position: absolute; left: 6px; color: var(--accent-light);
+      font-size: 16px; line-height: 1;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ───────────────────────────────────────────────────── -->
+<nav>
+  <div class="inner">
+    <div class="nav-logo">
+      <span class="icon">🏪</span>
+      Mini Vending Bench
+    </div>
+    <div class="nav-links">
+      <a href="#simulation">Simulation</a>
+      <a href="#tools">Tools</a>
+      <a href="#suppliers">Suppliers</a>
+      <a href="#supervision">Supervision</a>
+      <a href="#evaluation">Evaluation</a>
+      <a href="#config">Config</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-badge">🧪 AI Agent Benchmark</div>
+    <h1>Mini <span>Vending</span> Bench</h1>
+    <p>A long-horizon benchmark that tests AI agents on 30 days of vending machine business management — balancing inventory, cash flow, supplier relations, and pricing strategy.</p>
+
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="num">30</span><span class="lbl">Simulation days</span></div>
+      <div class="hero-stat"><span class="num">16</span><span class="lbl">Tools available</span></div>
+      <div class="hero-stat"><span class="num">16</span><span class="lbl">Products</span></div>
+      <div class="hero-stat"><span class="num">8</span><span class="lbl">Suppliers</span></div>
+      <div class="hero-stat"><span class="num">4</span><span class="lbl">Supervisor modes</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Diagram ───────────────────────────────────────────────── -->
+<div class="diagram-section">
+  <div class="container">
+    <div class="diagram-label">
+      <span>System Overview</span>
+      <h2>How the benchmark works</h2>
+    </div>
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 900 402" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:900px;display:block;margin:0 auto;overflow:visible">
+        <defs>
+          <marker id="arr-purple" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><polygon points="0,0 8,4 0,8" fill="#818cf8"/></marker>
+          <marker id="arr-yellow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><polygon points="0,0 8,4 0,8" fill="#f59e0b"/></marker>
+          <marker id="arr-green"  viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><polygon points="0,0 8,4 0,8" fill="#22c55e"/></marker>
+          <marker id="arr-blue"   viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><polygon points="0,0 8,4 0,8" fill="#3b82f6"/></marker>
+          <marker id="arr-pink"   viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><polygon points="0,0 8,4 0,8" fill="#ec4899"/></marker>
+        </defs>
+
+        <!-- ── SUPPLIERS ───────────────────────────────────── -->
+        <rect x="12" y="48" width="146" height="296" rx="12" fill="#1a1d27" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.55"/>
+        <rect x="12" y="48" width="146" height="36" rx="12" fill="#f59e0b" fill-opacity="0.12"/>
+        <!-- bottom edge cover to make top-only rounded corners -->
+        <rect x="12" y="72" width="146" height="12" fill="#f59e0b" fill-opacity="0.12"/>
+        <text x="85" y="71" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700" fill="#f59e0b">Suppliers</text>
+        <text x="85" y="97" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">8 LLM-powered characters</text>
+        <line x1="24" y1="104" x2="146" y2="104" stroke="#2d3148" stroke-width="1"/>
+
+        <!-- Honest -->
+        <rect x="22" y="112" width="124" height="48" rx="7" fill="#22263a"/>
+        <circle cx="38" cy="136" r="5" fill="#22c55e"/>
+        <text x="50" y="131" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" font-weight="600" fill="#e2e8f0">Honest</text>
+        <text x="50" y="147" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">fair prices · reliable</text>
+
+        <!-- Negotiation -->
+        <rect x="22" y="166" width="124" height="48" rx="7" fill="#22263a"/>
+        <circle cx="38" cy="190" r="5" fill="#818cf8"/>
+        <text x="50" y="185" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" font-weight="600" fill="#e2e8f0">Negotiation</text>
+        <text x="50" y="201" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">rewards persistence</text>
+
+        <!-- Adversarial -->
+        <rect x="22" y="220" width="124" height="48" rx="7" fill="#22263a"/>
+        <circle cx="38" cy="244" r="5" fill="#ef4444"/>
+        <text x="50" y="239" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" font-weight="600" fill="#e2e8f0">Adversarial</text>
+        <text x="50" y="255" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">misleading tactics</text>
+
+        <!-- Unreliable -->
+        <rect x="22" y="274" width="124" height="48" rx="7" fill="#22263a"/>
+        <circle cx="38" cy="298" r="5" fill="#f59e0b"/>
+        <text x="50" y="293" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11.5" font-weight="600" fill="#e2e8f0">Unreliable</text>
+        <text x="50" y="309" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">cheap · risky delays</text>
+
+        <!-- ── AGENT ────────────────────────────────────────── -->
+        <!-- Glow border -->
+        <rect x="310" y="106" width="188" height="188" rx="14" fill="#6366f1" fill-opacity="0.05" stroke="#6366f1" stroke-width="2.5"/>
+        <rect x="310" y="106" width="188" height="4" rx="2" fill="#6366f1"/>
+        <!-- Icon -->
+        <text x="404" y="158" text-anchor="middle" font-size="36" font-family="system-ui,sans-serif">🤖</text>
+        <!-- Name -->
+        <text x="404" y="182" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" font-weight="800" fill="#e2e8f0">Agent</text>
+        <line x1="326" y1="190" x2="482" y2="190" stroke="#2d3148" stroke-width="1"/>
+        <!-- Actions -->
+        <text x="404" y="208" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#94a3b8">📧  email · negotiate · place orders</text>
+        <text x="404" y="224" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#94a3b8">📦  restock machine · set prices</text>
+        <text x="404" y="240" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#94a3b8">💰  manage cash · monitor balance</text>
+        <text x="404" y="256" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#94a3b8">🗓  30 days · 16 tools available</text>
+        <!-- Goal -->
+        <text x="404" y="280" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10.5" fill="#6366f1" font-weight="700" letter-spacing="0.02em">goal: maximize bank balance</text>
+
+        <!-- ── VENDING MACHINE ──────────────────────────────── -->
+        <rect x="568" y="32" width="162" height="164" rx="12" fill="#1a1d27" stroke="#22c55e" stroke-width="1.5" stroke-opacity="0.6"/>
+        <rect x="568" y="32" width="162" height="4" rx="2" fill="#22c55e" fill-opacity="0.8"/>
+        <text x="649" y="77" text-anchor="middle" font-size="28" font-family="system-ui,sans-serif">🏪</text>
+        <text x="649" y="100" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12.5" font-weight="700" fill="#22c55e">Vending Machine</text>
+        <line x1="582" y1="108" x2="716" y2="108" stroke="#2d3148" stroke-width="1"/>
+        <text x="649" y="123" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#94a3b8">12 slots · 10 units / slot</text>
+        <text x="649" y="139" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#94a3b8">price elasticity · weather demand</text>
+        <text x="649" y="155" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#94a3b8">auto-collects cash daily</text>
+        <text x="649" y="185" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="9.5" fill="#64748b">123 Market St, San Francisco</text>
+
+        <!-- ── WAREHOUSE ────────────────────────────────────── -->
+        <rect x="568" y="250" width="162" height="105" rx="12" fill="#1a1d27" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.6"/>
+        <rect x="568" y="250" width="162" height="4" rx="2" fill="#3b82f6" fill-opacity="0.8"/>
+        <text x="649" y="286" text-anchor="middle" font-size="22" font-family="system-ui,sans-serif">📦</text>
+        <text x="649" y="306" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12.5" font-weight="700" fill="#3b82f6">Warehouse</text>
+        <text x="649" y="322" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#94a3b8">orders delivered here first</text>
+        <text x="649" y="340" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">agent transfers to machine</text>
+
+        <!-- ── CUSTOMERS ────────────────────────────────────── -->
+        <rect x="763" y="98" width="120" height="118" rx="12" fill="#1a1d27" stroke="#ec4899" stroke-width="1.5" stroke-opacity="0.6"/>
+        <rect x="763" y="98" width="120" height="4" rx="2" fill="#ec4899" fill-opacity="0.8"/>
+        <text x="823" y="138" text-anchor="middle" font-size="26" font-family="system-ui,sans-serif">👥</text>
+        <text x="823" y="158" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12.5" font-weight="700" fill="#ec4899">Customers</text>
+        <text x="823" y="174" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#94a3b8">daily foot traffic</text>
+        <text x="823" y="190" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">price &amp; weather sensitive</text>
+        <text x="823" y="208" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#64748b">→ revenue for agent</text>
+
+        <!-- ══════════════════════════════════════════════════
+             ARROWS
+        ══════════════════════════════════════════════════ -->
+
+        <!-- 1. Agent → Suppliers (email, going left, upper lane) -->
+        <path d="M 310 183 C 265 183 215 170 158 170"
+              stroke="#818cf8" stroke-width="1.8" stroke-dasharray="5,3" fill="none"
+              marker-end="url(#arr-purple)"/>
+        <rect x="184" y="157" width="108" height="16" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="238" y="169" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#818cf8">📧 email · negotiate</text>
+
+        <!-- 2. Suppliers → Agent (quotes, going right, lower lane) -->
+        <path d="M 158 220 C 215 220 265 232 310 232"
+              stroke="#818cf8" stroke-width="1.6" stroke-dasharray="5,3" fill="none" stroke-opacity="0.65"
+              marker-end="url(#arr-purple)"/>
+        <rect x="188" y="218" width="90" height="16" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="233" y="230" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#818cf8" fill-opacity="0.8">quotes · responses</text>
+
+        <!-- 3. Suppliers → Warehouse (delivery arc, below boxes) -->
+        <path d="M 85 344 C 140 378 320 390 460 384 C 530 380 552 336 568 298"
+              stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="6,3" fill="none" stroke-opacity="0.85"
+              marker-end="url(#arr-yellow)"/>
+        <rect x="240" y="378" width="132" height="16" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="306" y="390" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#f59e0b">📬 delivery (1–4 days)</text>
+
+        <!-- 4. Agent → Vending Machine (restock + prices) -->
+        <path d="M 498 152 C 532 152 552 118 568 112"
+              stroke="#22c55e" stroke-width="2" fill="none"
+              marker-end="url(#arr-green)"/>
+        <rect x="491" y="115" width="90" height="16" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="536" y="127" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#22c55e">restock · set prices</text>
+
+        <!-- 5. Agent → Warehouse (check + transfer) -->
+        <path d="M 498 255 C 530 258 550 268 568 270"
+              stroke="#3b82f6" stroke-width="1.8" fill="none"
+              marker-end="url(#arr-blue)"/>
+        <rect x="491" y="254" width="88" height="16" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="535" y="266" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#3b82f6">check · transfer</text>
+
+        <!-- 6. Warehouse → Vending Machine (stock up, vertical) -->
+        <path d="M 649 250 L 649 196"
+              stroke="#22c55e" stroke-width="1.5" fill="none" stroke-opacity="0.55"
+              marker-end="url(#arr-green)"/>
+        <rect x="618" y="218" width="62" height="14" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="649" y="229" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="9.5" fill="#64748b">↑ stock up</text>
+
+        <!-- 7. Customers → Vending Machine (purchase) -->
+        <path d="M 763 148 L 730 132"
+              stroke="#ec4899" stroke-width="2" fill="none"
+              marker-end="url(#arr-pink)"/>
+        <rect x="718" y="126" width="50" height="15" rx="3" fill="#22263a" fill-opacity="0.98"/>
+        <text x="743" y="137" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="10" fill="#ec4899">$$ buy</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ── Overview ──────────────────────────────────────────────── -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label">Overview</div>
+    <h2>What is Mini Vending Bench?</h2>
+    <p class="section-desc">An agent is given $500 and placed in charge of a 12-slot vending machine at 123 Market St, San Francisco. Over 30 simulated days it must stock the machine, set prices, manage orders from suppliers, and grow its bank balance. The benchmark tests long-term coherence, financial planning, and multi-step reasoning under constraint.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>Long-horizon reasoning</h3>
+        <p>Decisions made on day 1 (what to order, from whom, at what price) affect the agent's ability to operate on day 10. The benchmark rewards consistent multi-day planning, not one-off clever moves.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💸</div>
+        <h3>Real financial constraints</h3>
+        <p>A $2 daily operating fee drains cash. Orders are charged immediately and delivered days later. The agent must keep the balance above $10 or the business goes bankrupt.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤝</div>
+        <h3>Supplier negotiation</h3>
+        <p>Suppliers are LLM-driven characters — honest, adversarial, or requiring negotiation. Agents that communicate well and shop around get better prices.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌤️</div>
+        <h3>Dynamic environment</h3>
+        <p>Weather changes daily and affects demand. Hot days boost beverage sales. Rainy days cut foot traffic. Weekends attract more customers. The agent must adapt.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <h3>Two-stage inventory</h3>
+        <p>Orders land in a warehouse first. The agent must manually restock the vending machine from storage. Forgetting to restock means stockouts and lost revenue.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔬</div>
+        <h3>Supervisor modes</h3>
+        <p>Run the agent with no guidance, minimal instructions, static strategic guidelines, or a live MCP-connected supervisor. Compare how oversight changes performance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Simulation ─────────────────────────────────────────────── -->
+<section id="simulation">
+  <div class="container">
+    <div class="section-label">Simulation</div>
+    <h2>How a day works</h2>
+    <p class="section-desc">The simulation advances one day at a time. Each day the agent takes as many tool calls as needed, then signals it is done. The environment then runs the day's end-of-day events automatically.</p>
+
+    <div class="cycle">
+      <div class="cycle-step">
+        <div class="step-num">1</div>
+        <div class="title">Agent acts</div>
+        <div class="desc">Uses tools freely — check inventory, restock, email suppliers, place orders, adjust prices.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="step-num">2</div>
+        <div class="title">Day closes</div>
+        <div class="desc">Agent signals end of day. Weather updates. Daily $2 location fee is charged.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="step-num">3</div>
+        <div class="title">Deliveries</div>
+        <div class="desc">Pending orders whose delivery day has arrived are moved into storage.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="step-num">4</div>
+        <div class="title">Customers shop</div>
+        <div class="desc">Simulated customers buy from the machine based on price, weather, and day of week.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="step-num">5</div>
+        <div class="title">Cash collected</div>
+        <div class="desc">All purchase revenue moves from the machine into the bank balance.</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px;">
+      <div class="two-col">
+        <!-- Weather -->
+        <div>
+          <h3 style="margin-bottom:14px;">☁️ Weather & demand</h3>
+          <div class="weather-grid">
+            <div class="weather-card">
+              <div class="icon">☀️</div>
+              <div class="name">Sunny</div>
+              <div class="effect">Normal demand, slight beverage boost</div>
+            </div>
+            <div class="weather-card">
+              <div class="icon">🔥</div>
+              <div class="name">Hot</div>
+              <div class="effect">Strong beverage demand surge</div>
+            </div>
+            <div class="weather-card">
+              <div class="icon">⛅</div>
+              <div class="name">Cloudy</div>
+              <div class="effect">Slightly reduced foot traffic</div>
+            </div>
+            <div class="weather-card">
+              <div class="icon">🌧️</div>
+              <div class="name">Rainy</div>
+              <div class="effect">Fewer customers, demand drops</div>
+            </div>
+          </div>
+        </div>
+        <!-- Starting conditions -->
+        <div>
+          <h3 style="margin-bottom:14px;">🏦 Starting conditions</h3>
+          <div class="infobox">
+            <ul>
+              <li>Bank balance: <strong>$500</strong></li>
+              <li>Vending machine: <strong>4 rows × 3 columns</strong> (12 slots, 10 units each)</li>
+              <li>Machine &amp; warehouse: <strong>empty</strong> — agent must stock from scratch</li>
+              <li>Daily operating fee: <strong>$2 / day</strong></li>
+              <li>Bankruptcy: balance below <strong>$10 for 3 consecutive days</strong></li>
+              <li>Benchmark duration: <strong>30 days</strong> (configurable)</li>
+            </ul>
+          </div>
+
+          <h3 style="margin-top:20px; margin-bottom:14px;">📉 End conditions</h3>
+          <div class="infobox">
+            <ul>
+              <li><span class="pill green">Success</span> — agent completes all 30 days</li>
+              <li><span class="pill red">Bankruptcy</span> — balance &lt; $10 for 3 consecutive days</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tools ──────────────────────────────────────────────────── -->
+<section id="tools">
+  <div class="container">
+    <div class="section-label">Tools</div>
+    <h2>16 agent tools</h2>
+    <p class="section-desc">The agent interacts with the simulation exclusively through these tools. Parameters marked in <span class="param req" style="display:inline">yellow</span> are required; others are optional.</p>
+
+    <!-- Finance -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">💰</div>
+        <h3>Finance</h3>
+        <span>2 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">get_balance</div>
+          <div class="tool-desc">Returns current balance, starting balance, total revenue, total expenses, and calculated profit.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">view_transactions</div>
+          <div class="tool-desc">Returns the transaction ledger with amounts, descriptions, running balance, and totals.</div>
+          <div class="params">
+            <span class="param">limit</span>
+            <span class="param">type: revenue|expense|all</span>
+            <span class="param">min_day</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">📅</div>
+        <h3>Time</h3>
+        <span>2 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">get_current_date</div>
+          <div class="tool-desc">Returns current day number, start date, weather, max days, and days remaining in the benchmark.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">wait_for_next_day</div>
+          <div class="tool-desc">Closes the current day and triggers all end-of-day events: fee deduction, deliveries, customer purchases, cash collection, and weather update.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Research -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">🔍</div>
+        <h3>Research</h3>
+        <span>2 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">get_available_products</div>
+          <div class="tool-desc">Lists all products with typical wholesale price, typical retail price, and suggested margin percentage.</div>
+          <div class="params">
+            <span class="param">category: beverage|snack|all</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">search_suppliers</div>
+          <div class="tool-desc">Lists all suppliers with contact info, products carried, lead time, minimum order quantity, and type.</div>
+          <div class="params">
+            <span class="param">product</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Communication -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">📧</div>
+        <h3>Email &amp; Orders</h3>
+        <span>4 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">view_inbox</div>
+          <div class="tool-desc">Lists emails with sender, subject, date received, and a 100-character preview. Shows total and unread count.</div>
+          <div class="params">
+            <span class="param">limit</span>
+            <span class="param">unread_only</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">read_email</div>
+          <div class="tool-desc">Opens and marks as read a specific email. Returns full body, sender, subject, and conversation thread ID.</div>
+          <div class="params">
+            <span class="param req">email_id</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">send_email</div>
+          <div class="tool-desc">Sends an email to a supplier. The LLM-powered supplier responds immediately and the reply lands in the inbox — enabling negotiation within the same day.</div>
+          <div class="params">
+            <span class="param req">to</span>
+            <span class="param req">subject</span>
+            <span class="param req">body</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">place_order</div>
+          <div class="tool-desc">Places a purchase order with a supplier. Charges the account immediately. Goods arrive in storage after the supplier's lead time (1–4 days). Orders are irreversible.</div>
+          <div class="params">
+            <span class="param req">supplier_email</span>
+            <span class="param req">items[]</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">🏭</div>
+        <h3>Storage</h3>
+        <span>2 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">get_storage_inventory</div>
+          <div class="tool-desc">Shows what's in the warehouse — all products, quantities, and totals. Ordered items that have arrived appear here.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">check_deliveries</div>
+          <div class="tool-desc">Lists all pending orders with days until arrival, plus the last 5 completed deliveries.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vending Machine -->
+    <div class="tool-group">
+      <div class="tool-group-header">
+        <div class="tool-group-icon">🏪</div>
+        <h3>Vending Machine</h3>
+        <span>4 tools</span>
+      </div>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">view_vending_machine</div>
+          <div class="tool-desc">Shows the full machine layout: all 12 slots with product, quantity, price, and capacity. Also shows total units, cash collected, and lifetime units sold.</div>
+          <div class="params"><span class="param none">no parameters</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">restock_machine</div>
+          <div class="tool-desc">Moves units from warehouse storage into a specific slot. Sets the retail price for that slot. Slot holds a single product up to 10 units.</div>
+          <div class="params">
+            <span class="param req">product</span>
+            <span class="param req">row</span>
+            <span class="param req">column</span>
+            <span class="param req">quantity</span>
+            <span class="param req">price</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">set_price</div>
+          <div class="tool-desc">Changes the retail price for a slot without restocking. Allows dynamic pricing in response to weather or demand.</div>
+          <div class="params">
+            <span class="param req">row</span>
+            <span class="param req">column</span>
+            <span class="param req">price</span>
+          </div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">empty_slot</div>
+          <div class="tool-desc">Removes all units from a slot and returns them to warehouse storage. Useful for swapping out low-performing products.</div>
+          <div class="params">
+            <span class="param req">row</span>
+            <span class="param req">column</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Suppliers ───────────────────────────────────────────────── -->
+<section id="suppliers">
+  <div class="container">
+    <div class="section-label">Suppliers</div>
+    <h2>8 LLM-powered suppliers</h2>
+    <p class="section-desc">Each supplier is a distinct character simulated by an LLM. They respond immediately to emails and have different pricing behavior, reliability, and negotiation dynamics. Finding the right supplier — and building a relationship — is part of the challenge.</p>
+
+    <div class="supplier-grid">
+      <div class="supplier-card">
+        <span class="supplier-tag tag-honest">Honest</span>
+        <h3>Fair &amp; transparent</h3>
+        <p>Quotes reasonable prices upfront. Reliable delivery. No tricks. Good baseline to price-check against other suppliers.</p>
+      </div>
+      <div class="supplier-card">
+        <span class="supplier-tag tag-negot">Negotiation</span>
+        <h3>High anchor, drops with work</h3>
+        <p>Initial quotes are inflated. Responds well to persistent negotiation, bulk commitments, or polite pushback. Rewards agents who communicate.</p>
+      </div>
+      <div class="supplier-card">
+        <span class="supplier-tag tag-advers">Adversarial</span>
+        <h3>Misleading &amp; manipulative</h3>
+        <p>Uses deceptive tactics, hides fees, overstates scarcity. An agent that doesn't read responses carefully will overpay significantly.</p>
+      </div>
+      <div class="supplier-card">
+        <span class="supplier-tag tag-unreliab">Unreliable</span>
+        <h3>Cheapest price, worst reliability</h3>
+        <p>Offers below-market prices but may delay or fail deliveries. Forces agents to trade cost against supply-chain risk.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;" class="infobox">
+      <h3>📬 Email interaction loop</h3>
+      <ul>
+        <li>Agent calls <code style="font-family:monospace; color: var(--accent-light);">send_email</code> with a message to a supplier</li>
+        <li>Supplier LLM generates a realistic reply and it appears in the inbox immediately</li>
+        <li>Agent can negotiate, ask for quotes, or request terms — all within the same day</li>
+        <li>Orders placed via <code style="font-family:monospace; color: var(--accent-light);">place_order</code> reference the agreed price and supplier email</li>
+        <li>Lead time (1–4 days per supplier) determines when goods arrive in storage</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── Supervision ─────────────────────────────────────────────── -->
+<section id="supervision">
+  <div class="container">
+    <div class="section-label">Supervision</div>
+    <h2>4 supervisor modes</h2>
+    <p class="section-desc">The benchmark supports four levels of external guidance. Use them to study how strategic oversight — from none to live adaptive coaching — affects agent performance.</p>
+
+    <div class="modes-grid">
+      <div class="mode-card mode-none">
+        <span class="mode-tag">none</span>
+        <h3>Control</h3>
+        <p>Full instructions are injected into the agent's system prompt. No external supervisor. Establishes the upper baseline.</p>
+      </div>
+      <div class="mode-card mode-minimal">
+        <span class="mode-tag">minimal</span>
+        <h3>Bare-bones</h3>
+        <p>"You manage a vending machine business. Maximize your bank balance." No operational detail. Tests raw agent initiative.</p>
+      </div>
+      <div class="mode-card mode-static">
+        <span class="mode-tag">static</span>
+        <h3>Static guidelines</h3>
+        <p>Five strategic rules injected at session start — e.g., "maintain 2× daily fees in reserve", "negotiate bulk discounts", "raise prices on hot days". Fixed, non-adaptive guidance.</p>
+      </div>
+      <div class="mode-card mode-mcp">
+        <span class="mode-tag">mcp</span>
+        <h3>MCP supervisor</h3>
+        <p>An external agent (e.g. Wayfound) connected over HTTP provides adaptive, session-aware strategic guidance each day. The most realistic oversight scenario.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Architecture ────────────────────────────────────────────── -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <h2>Two-model design</h2>
+    <p class="section-desc">The benchmark uses two separate LLM calls per interaction. This keeps supplier personalities consistent regardless of which agent model is under test.</p>
+
+    <div class="arch">
+      <div class="arch-box highlight">
+        <div class="icon">🤖</div>
+        <h3>Agent Model</h3>
+        <p>The model under evaluation. Calls all 16 tools. Configurable (any OpenAI-compatible endpoint).</p>
+      </div>
+      <div class="arch-arrow">⇄</div>
+      <div class="arch-box">
+        <div class="icon">🏪</div>
+        <h3>Simulation Environment</h3>
+        <p>State machine in <code style="font-size:11px; color:var(--text-muted)">src/env/</code>. Manages state, orders, customers, deliveries, weather.</p>
+      </div>
+      <div class="arch-arrow">⇄</div>
+      <div class="arch-box">
+        <div class="icon">📦</div>
+        <h3>Supplier Model</h3>
+        <p>Fixed LLM that generates realistic supplier replies. Separate from the agent model to ensure fairness.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px;" class="infobox">
+      <h3>📁 Run output files</h3>
+      <div class="output-files" style="margin-top:12px;">
+        <div class="output-file">
+          <span class="filename">state.json</span>
+          <span class="filedesc">Full simulation state — finances, machine, storage, emails, orders</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">daily_summary.jsonl</span>
+          <span class="filedesc">Per-day: balance, units sold, revenue, deliveries, weather, inventory</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">messages.jsonl</span>
+          <span class="filedesc">All agent messages and LLM prompts (one per line)</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">tool_calls.jsonl</span>
+          <span class="filedesc">Every tool call with parameters, result, and timestamp</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">costs.jsonl</span>
+          <span class="filedesc">Per-day token usage and USD cost</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">final_score.json</span>
+          <span class="filedesc">Final metrics: balance, net worth, profit, units sold, days survived</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">final_cost.json</span>
+          <span class="filedesc">Total token usage and cost across the full run</span>
+        </div>
+        <div class="output-file">
+          <span class="filename">config.json</span>
+          <span class="filedesc">Run configuration (API keys redacted)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Evaluation ──────────────────────────────────────────────── -->
+<section id="evaluation">
+  <div class="container">
+    <div class="section-label">Evaluation</div>
+    <h2>How agents are scored</h2>
+    <p class="section-desc">The primary objective is simple: maximize the bank balance at the end of day 30. Secondary metrics give a richer picture of the agent's strategy.</p>
+
+    <div class="metrics-grid">
+      <div class="metric primary">
+        <div class="metric-icon">🏦</div>
+        <h3>Final Balance <span class="pill green" style="font-size:10px; margin-left:4px;">Primary</span></h3>
+        <p>Cash in the bank account at the end of day 30. This is the headline metric — only cash counts.</p>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">💎</div>
+        <h3>Net Worth</h3>
+        <p>Balance + remaining inventory value (at wholesale) + cash in machine. Rewards leaving the business in good shape.</p>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">📈</div>
+        <h3>Total Profit</h3>
+        <p>Total revenue minus total expenses over the 30-day run. Measures operational efficiency.</p>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">🛒</div>
+        <h3>Units Sold</h3>
+        <p>Total customer purchases. A proxy for how well the agent kept the machine stocked and priced competitively.</p>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">📅</div>
+        <h3>Days Survived</h3>
+        <p>How many days before bankruptcy or benchmark completion. A score of 30 means the agent ran the full duration.</p>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">✅</div>
+        <h3>Success Rate</h3>
+        <p>Across multiple runs, the fraction that completed all 30 days without going bankrupt.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px;" class="two-col">
+      <div class="infobox">
+        <h3>🎯 What good agents do</h3>
+        <ul>
+          <li>Email suppliers before ordering to get quotes and negotiate prices</li>
+          <li>Prioritize high-margin, fast-moving products (water, chips, candy)</li>
+          <li>Keep popular slots stocked — stockouts are permanent lost revenue</li>
+          <li>Raise prices on hot days; stay competitive in bad weather</li>
+          <li>Maintain a cash buffer (≥ 2× daily fee) to avoid bankruptcy risk</li>
+          <li>Reduce ordering in the final week to avoid unsold inventory</li>
+        </ul>
+      </div>
+      <div class="infobox">
+        <h3>⚠️ Common failure modes</h3>
+        <ul>
+          <li>Over-ordering early and running out of cash before deliveries</li>
+          <li>Neglecting to restock the machine after deliveries arrive</li>
+          <li>Trusting adversarial suppliers without reading replies carefully</li>
+          <li>Setting prices too high (drives customers away) or too low (margin loss)</li>
+          <li>Ignoring weather — same prices on hot and rainy days leaves money behind</li>
+          <li>Running a near-empty machine for multiple days due to supply lag</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Config ──────────────────────────────────────────────────── -->
+<section id="config">
+  <div class="container">
+    <div class="section-label">Configuration</div>
+    <h2>config.json reference</h2>
+    <p class="section-desc">Copy <code style="font-family:monospace; color:var(--accent-light); font-size:13px;">config.example.json</code> to <code style="font-family:monospace; color:var(--accent-light); font-size:13px;">config.json</code> and set your API keys. All simulation parameters are adjustable.</p>
+
+    <div class="config-wrap">
+      <table class="config-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="key">agent.model</td><td class="default">—</td><td class="desc">OpenAI model name for the agent under evaluation (e.g. <code style="font-family:monospace">gpt-4o</code>, <code style="font-family:monospace">o1</code>)</td></tr>
+          <tr><td class="key">agent.apiKey</td><td class="default">—</td><td class="desc">API key for the agent model. Supports any OpenAI-compatible endpoint.</td></tr>
+          <tr><td class="key">agent.baseURL</td><td class="default">OpenAI default</td><td class="desc">Optional custom base URL (for Azure, local models, or other providers)</td></tr>
+          <tr><td class="key">supplier.model</td><td class="default">—</td><td class="desc">Model used to generate supplier email responses</td></tr>
+          <tr><td class="key">supplier.apiKey</td><td class="default">—</td><td class="desc">API key for the supplier model</td></tr>
+          <tr><td class="key">simulation.durationDays</td><td class="default">30</td><td class="desc">Number of simulation days to run</td></tr>
+          <tr><td class="key">simulation.startingBalance</td><td class="default">500</td><td class="desc">Initial bank balance in USD</td></tr>
+          <tr><td class="key">simulation.dailyFee</td><td class="default">2</td><td class="desc">Location operating cost charged every day</td></tr>
+          <tr><td class="key">simulation.bankruptcyThreshold</td><td class="default">10</td><td class="desc">Balance below this for 3 consecutive days triggers bankruptcy</td></tr>
+          <tr><td class="key">simulation.maxTurns</td><td class="default">2000</td><td class="desc">Max tool calls per day before the agent is forced to advance</td></tr>
+          <tr><td class="key">simulation.randomSeed</td><td class="default">42</td><td class="desc">Seed for reproducible runs. Omit for random behavior.</td></tr>
+          <tr><td class="key">features.adversarialSuppliers</td><td class="default">true</td><td class="desc">Enable adversarial supplier behavior and deceptive pricing</td></tr>
+          <tr><td class="key">features.negotiation</td><td class="default">true</td><td class="desc">Enable suppliers that require negotiation for good prices</td></tr>
+          <tr><td class="key">features.supplyChainIssues</td><td class="default">false</td><td class="desc">Enable random delivery delays and fulfillment problems</td></tr>
+          <tr><td class="key">supervisor.staticGuidelines</td><td class="default">[]</td><td class="desc">Array of 5 strategic guidelines injected when <code style="font-family:monospace">--mode static</code></td></tr>
+          <tr><td class="key">supervisor.mcpServer.url</td><td class="default">—</td><td class="desc">HTTP endpoint for the MCP supervisor agent</td></tr>
+          <tr><td class="key">supervisor.mcpServer.bearerToken</td><td class="default">—</td><td class="desc">Auth token for the MCP supervisor connection</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 24px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 20px;">
+      <h3 style="font-size:13px; margin-bottom:12px; color:var(--text-muted); font-family:monospace;">$ npm start &lt;subdir&gt; &lt;mode&gt;</h3>
+      <div style="display:flex; flex-wrap:wrap; gap:10px; font-family:monospace; font-size:13px;">
+        <div style="color:var(--text-muted);">npm start control <span style="color:var(--accent-light);">none</span></div>
+        <div style="color:var(--text-dim);">//</div>
+        <div style="color:var(--text-muted);">npm start run-01 <span style="color:var(--green);">static</span></div>
+        <div style="color:var(--text-dim);">//</div>
+        <div style="color:var(--text-muted);">npm start run-02 <span style="color:var(--purple);">mcp</span></div>
+        <div style="color:var(--text-dim);">//</div>
+        <div style="color:var(--text-muted);">npm start bare <span style="color:var(--blue);">minimal</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <p>Mini Vending Bench — AI Agent Benchmark &nbsp;·&nbsp; MIT License</p>
+    <p style="margin-top: 6px; font-size:12px;">Inspired by <a href="https://github.com/wm-admire/Vending-Bench">Vending-Bench</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
