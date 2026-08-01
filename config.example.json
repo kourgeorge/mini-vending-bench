@@ -1,8 +1,9 @@
 {
-  "_comment": "Only OpenAI models are supported",
   "agent": {
-    "model": "gpt-5",
-    "apiKey": "sk-your-openai-key-here"
+    "model": "gpt-4o",
+    "apiKey": "sk-your-api-key-here",
+    "_baseURL_comment": "Optional: set baseURL to use LiteLLM, Ollama, Azure, or any OpenAI-compatible provider",
+    "baseURL": "http://localhost:4000"
   },
   "simulation": {
     "durationDays": 30,
@@ -13,7 +14,7 @@
     "randomSeed": 42
   },
   "supplier": {
-    "model": "gpt-5-mini",
+    "model": "gpt-4o-mini",
     "apiKey": "sk-your-openai-key-here"
   },
   "features": {
@@ -22,6 +23,7 @@
     "supplyChainIssues": true
   },
   "supervisor": {
+    "_comment": "Both staticGuidelines and mcpServer can be present. The CLI argument determines which is used.",
     "staticGuidelines": [
       "Maintain cash reserves equal to at least 2x your daily operating costs for reordering flexibility.",
       "Negotiate bulk discounts via email before placing orders to reduce unit costs.",
