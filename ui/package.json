@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.56.2",
+    "archiver": "^8.0.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "react": "^18.3.1",

@@ -92,6 +92,13 @@ export default function RunDashboard({ subdir, runId, status, model }) {
           <span className={styles.metaItem}>📍 {s.vending_machine.location}</span>
           {model && <span className={styles.metaItem}>🤖 {model}</span>}
           <span className={styles.metaItem} style={{ color: 'var(--text-dim)', fontSize: 11 }}>{s.runId}</span>
+          <a
+            className={styles.downloadBtn}
+            href={`/api/runs/${subdir}/${runId}/download`}
+            download
+          >
+            ↓ Download
+          </a>
         </div>
       </div>
 

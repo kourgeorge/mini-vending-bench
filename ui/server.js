@@ -3,6 +3,7 @@ import cors from 'cors';
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { ZipArchive } from 'archiver';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RUN_OUTPUTS_DIR = resolve(__dirname, '../run_outputs');
@@ -230,6 +231,159 @@ app.get('/api/leaderboard', (req, res) => {
   leaderboard.sort((a, b) => b.avgNetWorth - a.avgNetWorth);
 
   res.json(leaderboard);
+});
+
+// GET /api/runs/:subdir/:runId/download — ZIP of all run output files + README.md
+app.get('/api/runs/:subdir/:runId/download', (req, res) => {
+  const { subdir, runId } = req.params;
+  const runDir = join(RUN_OUTPUTS_DIR, subdir, runId);
+
+  if (!existsSync(runDir)) return res.status(404).json({ error: 'Run not found' });
+
+  const state = readJSON(join(runDir, 'state.json'));
+  const config = readJSON(join(runDir, 'config.json'));
+  const finalScore = readJSON(join(runDir, 'final_score.json'));
+  const status = getRunStatus(runDir);
+  const tsMatch = runId.match(/run_(\d+)/);
+  const startedAt = tsMatch ? new Date(parseInt(tsMatch[1])).toISOString() : 'unknown';
+
+  const readmeContent = `# Mini Vending Bench — Run Export
+
+**Run ID:** ${runId}
+**Group:** ${subdir}
+**Started:** ${startedAt}
+**Status:** ${status}
+**Model:** ${config?.agent?.model ?? 'unknown'}
+**Days:** ${state?.simulation?.current_day != null ? state.simulation.current_day - 1 : '?'} / ${state?.simulation?.max_days ?? '?'}
+${finalScore ? `**Final Balance:** $${finalScore.balance?.toFixed(2)}
+**Net Worth:** $${finalScore.netWorth?.toFixed(2)}
+**Profit:** $${finalScore.profit?.toFixed(2)}
+**Units Sold:** ${finalScore.unitsSold}` : ''}
+
+---
+
+## Files in this export
+
+### \`state.json\`
+The complete simulation state at the end of the run (or at the last recorded point for live runs).
+Contains:
+- \`simulation\` — current day, max days, weather
+- \`finances\` — balance, starting balance, total revenue/expenses, full transaction history
+- \`vending_machine\` — slot inventory, location, units sold counter
+- \`storage\` — items held in back-stock
+- \`orders\` — pending and completed supplier orders
+- \`emails\` — agent inbox (supplier communications, system messages)
+
+### \`config.json\`
+The configuration used to start this run.
+Contains:
+- \`agent\` — model name and API settings
+- \`simulation\` — duration (days), starting balance, daily fee, bankruptcy threshold, random seed
+- \`supplier\` — supplier agent model settings
+- \`features\` — feature flags (adversarial suppliers, negotiation, supply chain issues)
+- \`supervisor\` — supervisor mode (\`none\` | \`static\` | \`mcp\` | \`minimal\`) and guidelines
+
+### \`daily_summary.jsonl\`
+One JSON object per line, one entry per completed simulation day.
+Each entry contains:
+- \`day\` — day number (1-based)
+- \`timestamp\` — ISO timestamp when the day was recorded
+- \`balance\` — cash balance at end of day
+- \`units_sold\` — units sold that day
+- \`revenue\` — revenue earned that day
+- \`deliveries_received\` — number of supplier deliveries that arrived
+- \`weather\` — weather condition for the day (affects foot traffic)
+- \`inventory_count\` — total units across machine and storage
+
+### \`messages.jsonl\`
+One JSON object per line — the agent's narrative log.
+Each entry contains:
+- \`timestamp\` — ISO timestamp
+- \`role\` — always \`"agent"\`
+- \`content\` — the agent's written summary/reasoning for that day
+- \`day\` — simulation day number
+
+### \`tool_calls.jsonl\`
+One JSON object per line — every tool invocation the agent made.
+Each entry contains:
+- \`tool\` — tool name (e.g., \`check_inventory\`, \`place_order\`, \`restock_machine\`)
+- \`input\` — parameters passed to the tool
+- \`output\` — result returned by the tool
+- \`day\` — simulation day number
+
+### \`costs.jsonl\`
+One JSON object per line — LLM cost data for each API call.
+Each entry contains:
+- \`costUsd\` — cost in USD for that call (may be null if pricing unavailable)
+- \`totalTokens\` — total tokens used
+- \`inputTokens\` — prompt/input tokens
+- \`outputTokens\` — completion/output tokens
+
+### \`final_score.json\`
+Present only on completed runs. Contains the final performance metrics:
+- \`balance\` — ending cash balance
+- \`netWorth\` — balance + value of remaining inventory
+- \`profit\` — net worth minus starting balance
+- \`totalRevenue\` — sum of all sales revenue
+- \`totalExpenses\` — sum of all costs (product purchases, daily fees)
+- \`unitsSold\` — total units sold across all days
+- \`daysSurvived\` — number of days the agent operated without going bankrupt
+- \`startingBalance\` — the initial cash balance
+- \`generated_at\` — ISO timestamp when the score was computed
+
+### \`final_cost.json\`
+Present on completed runs (if cost tracking was enabled). Aggregate LLM cost summary:
+- \`totalCostUsd\` — total USD spent on LLM API calls
+- \`totalTokens\` — total tokens consumed across the entire run
+
+### \`balance_chart_data.json\`
+Pre-computed data for the balance-over-time chart. Array of \`{ day, balance }\` objects.
+
+### \`revenue_chart_data.json\`
+Pre-computed data for the daily revenue chart. Array of \`{ day, revenue }\` objects.
+
+### \`units_sold_chart_data.json\`
+Pre-computed data for the units-sold chart. Array of \`{ day, units_sold }\` objects.
+
+---
+
+## Simulation Overview
+
+The Mini Vending Bench is a benchmark where an AI agent manages a vending machine business
+over a simulated period (typically 30 days). The agent starts with a fixed cash balance and must:
+
+1. Stock products in the vending machine slots
+2. Monitor inventory and sales
+3. Place supplier orders before running out of stock
+4. Manage cash flow to avoid bankruptcy (balance dropping below threshold)
+5. Adapt product selection based on sales performance and weather conditions
+
+The agent is scored on final **net worth** (cash + inventory value) relative to its starting balance.
+`;
+
+  const filename = `${subdir}_${runId}.zip`;
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  const archive = new ZipArchive({ zlib: { level: 6 } });
+  archive.on('error', err => { throw err; });
+  archive.pipe(res);
+
+  // Add README.md
+  archive.append(readmeContent, { name: 'README.md' });
+
+  // Add all files from the run directory
+  const knownFiles = [
+    'state.json', 'config.json', 'final_score.json', 'final_cost.json',
+    'daily_summary.jsonl', 'messages.jsonl', 'tool_calls.jsonl', 'costs.jsonl',
+    'balance_chart_data.json', 'revenue_chart_data.json', 'units_sold_chart_data.json',
+  ];
+  for (const file of knownFiles) {
+    const filePath = join(runDir, file);
+    if (existsSync(filePath)) archive.file(filePath, { name: file });
+  }
+
+  archive.finalize();
 });
 
 // GET /api/runs/:subdir/:runId/final_score — final_score.json
