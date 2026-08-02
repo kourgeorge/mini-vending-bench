@@ -24,6 +24,59 @@ function readJSON(filepath) {
   return JSON.parse(readFileSync(filepath, 'utf-8'));
 }
 
+/**
+ * Compute product swaps from tool calls
+ */
+function computeProductSwaps(toolCalls) {
+  const slotHistory = {};
+  const slotCurrent = {};
+
+  for (const call of toolCalls) {
+    if (call.tool === 'restock_machine' && call.result?.success) {
+      const { row, column, product } = call.args;
+      const key = `${row}-${column}`;
+      const prev = slotCurrent[key];
+      
+      if (prev !== product) {
+        if (!slotHistory[key]) slotHistory[key] = [];
+        slotHistory[key].push({ day: call.day, product });
+        slotCurrent[key] = product;
+      }
+    }
+
+    if (call.tool === 'empty_slot' && call.result?.success) {
+      const { row, column } = call.args;
+      delete slotCurrent[`${row}-${column}`];
+    }
+  }
+
+  return Object.values(slotHistory).reduce(
+    (sum, hist) => sum + Math.max(0, hist.length - 1),
+    0
+  );
+}
+
+/**
+ * Compute unsold units from state (machine + storage)
+ */
+function computeUnsoldUnits(state) {
+  if (!state) return 0;
+  
+  let total = 0;
+  
+  // Count units in vending machine
+  if (state.vending_machine?.inventory) {
+    total += state.vending_machine.inventory.reduce((sum, slot) => sum + (slot.quantity || 0), 0);
+  }
+  
+  // Count units in storage
+  if (state.storage?.inventory) {
+    total += state.storage.inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  }
+  
+  return total;
+}
+
 function getRunStatus(runDir) {
   const hasFinalScore = existsSync(join(runDir, 'final_score.json'));
   if (hasFinalScore) return 'completed';
@@ -298,7 +351,15 @@ app.get('/api/leaderboard', (req, res) => {
       const tsMatch = runId.match(/run_(\d+)/);
       const startedAt = tsMatch ? new Date(parseInt(tsMatch[1])).toISOString() : null;
 
-      const toolCallCount = readJSONL(join(runDir, 'tool_calls.jsonl')).length;
+      const toolCalls = readJSONL(join(runDir, 'tool_calls.jsonl'));
+      const toolCallCount = toolCalls.length;
+
+      // Compute product swaps from tool calls
+      const productSwaps = computeProductSwaps(toolCalls);
+
+      // Compute unsold units from final state
+      const state = readJSON(join(runDir, 'state.json'));
+      const unsoldUnits = computeUnsoldUnits(state);
 
       if (!byModel[model]) byModel[model] = [];
       byModel[model].push({
@@ -309,6 +370,8 @@ app.get('/api/leaderboard', (req, res) => {
         totalCostUsd: finalCost?.totalCostUsd ?? null,
         totalTokens: finalCost?.totalTokens ?? null,
         toolCallCount,
+        productSwaps,
+        unsoldUnits,
         dailySummaries: summaries,
       });
     }
@@ -317,12 +380,24 @@ app.get('/api/leaderboard', (req, res) => {
   const leaderboard = Object.entries(byModel).map(([model, runs]) => {
     const avg = key => runs.reduce((s, r) => s + (r[key] ?? 0), 0) / runs.length;
 
-    // Build per-day average balance across runs
+    // Build per-day average balance and profit across runs
     const maxDay = Math.max(...runs.map(r => r.dailySummaries.length));
     const avgBalanceByDay = Array.from({ length: maxDay }, (_, i) => {
       const dayNum = i + 1;
       const values = runs.map(r => r.dailySummaries.find(d => d.day === dayNum)?.balance).filter(v => v != null);
       return values.length ? { day: dayNum, balance: values.reduce((a, b) => a + b, 0) / values.length } : null;
+    }).filter(Boolean);
+
+    const avgProfitByDay = Array.from({ length: maxDay }, (_, i) => {
+      const dayNum = i + 1;
+      const values = runs.map(r => r.dailySummaries.find(d => d.day === dayNum)?.profit).filter(v => v != null);
+      return values.length ? { day: dayNum, profit: values.reduce((a, b) => a + b, 0) / values.length } : null;
+    }).filter(Boolean);
+
+    const avgNetWorthByDay = Array.from({ length: maxDay }, (_, i) => {
+      const dayNum = i + 1;
+      const values = runs.map(r => r.dailySummaries.find(d => d.day === dayNum)?.netWorth).filter(v => v != null);
+      return values.length ? { day: dayNum, netWorth: values.reduce((a, b) => a + b, 0) / values.length } : null;
     }).filter(Boolean);
 
     const completedFull = runs.filter(r => r.daysSurvived >= (r.durationDays ?? 30)).length;
@@ -337,12 +412,16 @@ app.get('/api/leaderboard', (req, res) => {
       avgUnitsSold: avg('unitsSold'),
       avgDaysSurvived: avg('daysSurvived'),
       avgToolCalls: avg('toolCallCount'),
+      avgProductSwaps: avg('productSwaps'),
+      avgUnsoldUnits: avg('unsoldUnits'),
       successRate: completedFull / runs.length,
       bestBalance: Math.max(...runs.map(r => r.balance)),
       worstBalance: Math.min(...runs.map(r => r.balance)),
       avgCostUsd: costRuns.length ? costRuns.reduce((s, r) => s + r.totalCostUsd, 0) / costRuns.length : null,
       avgTokens: costRuns.length ? Math.round(costRuns.reduce((s, r) => s + (r.totalTokens ?? 0), 0) / costRuns.length) : null,
       avgBalanceByDay,
+      avgProfitByDay,
+      avgNetWorthByDay,
       runDetails: runs.map(({ dailySummaries: _, ...r }) => r),
     };
   });

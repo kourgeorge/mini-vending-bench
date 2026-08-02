@@ -24,8 +24,9 @@ function pct(n) {
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function Leaderboard({ onSelectRun, embedded = false }) {
-  const [sortKey, setSortKey] = useState('avgNetWorth');
+  const [sortKey, setSortKey] = useState('avgProfit');
   const [expandedModel, setExpandedModel] = useState(null);
+  const [chartMetric, setChartMetric] = useState('profit');
 
   const { data = [], isLoading, error, refetch } = useQuery({
     queryKey: ['leaderboard'],
@@ -47,34 +48,61 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
   }
 
   const SORT_OPTIONS = [
-    { key: 'avgNetWorth', label: 'Net Worth' },
     { key: 'avgProfit', label: 'Profit' },
+    { key: 'avgNetWorth', label: 'Net Worth' },
     { key: 'avgUnitsSold', label: 'Units Sold' },
+    { key: 'avgUnsoldUnits', label: 'Unsold Units' },
+    { key: 'avgProductSwaps', label: 'Product Swaps' },
     { key: 'avgDaysSurvived', label: 'Days Survived' },
     { key: 'avgToolCalls', label: 'Tool Calls' },
   ];
 
   const sorted = [...data].sort((a, b) => b[sortKey] - a[sortKey]);
 
-  // Chart data: avg balance progression by day for each model
-  const allDays = [...new Set(data.flatMap(m => m.avgBalanceByDay.map(d => d.day)))].sort((a, b) => a - b);
-  const balanceProgressData = allDays.map(day => {
+  // Chart data: progression by day for each model (profit or netWorth)
+  // Fallback to balance-based calculation if profit/netWorth data not available (for old runs)
+  const allDays = [...new Set(data.flatMap(m => m.avgBalanceByDay?.map(d => d.day) || []))].sort((a, b) => a - b);
+  const progressionData = allDays.map(day => {
     const point = { day: `D${day}` };
     for (const model of data) {
-      const entry = model.avgBalanceByDay.find(d => d.day === day);
-      if (entry) point[model.model] = parseFloat(entry.balance.toFixed(2));
+      let value;
+      if (chartMetric === 'profit') {
+        // Try to get profit from avgProfitByDay, fallback to calculating from balance
+        const profitEntry = model.avgProfitByDay?.find(d => d.day === day);
+        if (profitEntry?.profit != null) {
+          value = profitEntry.profit;
+        } else {
+          // Fallback: calculate profit as balance - starting balance (500)
+          const balanceEntry = model.avgBalanceByDay?.find(d => d.day === day);
+          if (balanceEntry?.balance != null) {
+            value = balanceEntry.balance - 500;
+          }
+        }
+      } else {
+        // Try to get netWorth from avgNetWorthByDay, fallback to balance
+        const netWorthEntry = model.avgNetWorthByDay?.find(d => d.day === day);
+        if (netWorthEntry?.netWorth != null) {
+          value = netWorthEntry.netWorth;
+        } else {
+          const balanceEntry = model.avgBalanceByDay?.find(d => d.day === day);
+          value = balanceEntry?.balance;
+        }
+      }
+      if (value != null) point[model.model] = parseFloat(value.toFixed(2));
     }
     return point;
   });
 
-  // Frontier scatter data: cost vs profit per model
+  // Frontier scatter data: cost vs profit/netWorth per model
   const frontierData = data
     .filter(m => m.avgCostUsd != null)
     .map((m, i) => ({
       model: m.model.split('/').pop(),
       fullModel: m.model,
       x: parseFloat(m.avgCostUsd.toFixed(4)),
-      y: parseFloat(m.avgProfit.toFixed(2)),
+      y: parseFloat((chartMetric === 'profit' ? m.avgProfit : m.avgNetWorth).toFixed(2)),
+      profit: parseFloat(m.avgProfit.toFixed(2)),
+      netWorth: parseFloat(m.avgNetWorth.toFixed(2)),
       color: MODEL_COLORS[data.indexOf(m) % MODEL_COLORS.length],
     }));
 
@@ -90,14 +118,38 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
         </div>
       )}
 
-      {/* Balance progression chart */}
+      {/* Shared metric toggle for both charts */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 16, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 8, alignSelf: 'center' }}>Chart Metric:</span>
+        <button
+          className={`${styles.sortBtn} ${chartMetric === 'profit' ? styles.sortActive : ''}`}
+          onClick={() => setChartMetric('profit')}
+        >Profit</button>
+        <button
+          className={`${styles.sortBtn} ${chartMetric === 'netWorth' ? styles.sortActive : ''}`}
+          onClick={() => setChartMetric('netWorth')}
+        >Net Worth</button>
+      </div>
+
+      {/* Progression chart */}
       <div className={styles.chartCard}>
-        <h3 className={styles.chartTitle}>Average Balance Progression by Day</h3>
+        <h3 className={styles.chartTitle}>
+          Average {chartMetric === 'profit' ? 'Profit' : 'Net Worth'} Progression by Day
+        </h3>
         <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={balanceProgressData} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+          <LineChart data={progressionData} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--text-dim)' }} interval={4} />
-            <YAxis tick={{ fontSize: 11, fill: 'var(--text-dim)' }} tickFormatter={v => `$${v}`} />
+            <YAxis 
+              tick={{ fontSize: 11, fill: 'var(--text-dim)' }} 
+              tickFormatter={v => `$${v}`}
+              label={{ 
+                value: chartMetric === 'profit' ? 'Profit ($)' : 'Net Worth ($)', 
+                angle: -90, 
+                position: 'insideLeft',
+                style: { fontSize: 11, fill: 'var(--text-dim)' }
+              }}
+            />
             <Tooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
@@ -132,7 +184,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
 
       {/* Cost vs Profit frontier */}
       <div className={styles.chartCard}>
-        <h3 className={styles.chartTitle}>Cost vs Profit Frontier</h3>
+        <h3 className={styles.chartTitle}>LLM Cost vs {chartMetric === 'profit' ? 'Profit' : 'Net Worth'} Frontier</h3>
         {frontierData.length === 0 ? (
           <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
             No cost data available yet
@@ -155,7 +207,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
               <YAxis
                 dataKey="y"
                 type="number"
-                name="Profit"
+                name={chartMetric === 'profit' ? 'Profit' : 'Net Worth'}
                 tickFormatter={v => `$${v}`}
                 tick={{ fontSize: 11, fill: 'var(--text-dim)' }}
               />
@@ -168,7 +220,8 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                     <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12 }}>
                       <div style={{ color: d.color, fontWeight: 700, marginBottom: 4 }}>{d.model}</div>
                       <div style={{ color: 'var(--text-muted)' }}>Cost: <span style={{ color: 'var(--yellow)', fontWeight: 600 }}>${d.x.toFixed(4)}</span></div>
-                      <div style={{ color: 'var(--text-muted)' }}>Profit: <span style={{ color: d.y >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{d.y >= 0 ? '+' : ''}${d.y.toFixed(2)}</span></div>
+                      <div style={{ color: 'var(--text-muted)' }}>Profit: <span style={{ color: d.profit >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{d.profit >= 0 ? '+' : ''}${d.profit.toFixed(2)}</span></div>
+                      <div style={{ color: 'var(--text-muted)' }}>Net Worth: <span style={{ color: 'var(--text)', fontWeight: 600 }}>${d.netWorth.toFixed(2)}</span></div>
                     </div>
                   );
                 }}
@@ -201,15 +254,17 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
 
         <div className={styles.table}>
           <div className={styles.tableHead}>
-            <span className={styles.colRank}>#</span>
-            <span className={styles.colModel}>Model</span>
-            <span className={styles.colNum}>Runs</span>
-            <span className={styles.colNum}>Net Worth</span>
-            <span className={styles.colNum}>Profit</span>
-            <span className={styles.colNum}>Sold Units</span>
-            <span className={styles.colNum}>Operating Days</span>
-            <span className={styles.colNum}>#Tool<br/>Calls</span>
-            <span className={styles.colNum}>LLM Cost</span>
+            <span className={styles.colRank} title="Ranking position">#</span>
+            <span className={styles.colModel} title="AI model name">Model</span>
+            <span className={styles.colNum} title="Number of completed runs">Runs</span>
+            <span className={styles.colNum} title="Primary metric: Average profit (revenue - expenses). Equivalent to final balance - starting balance ($500)">Profit</span>
+            <span className={styles.colNum} title="Average final net worth (cash + inventory value)">Net Worth</span>
+            <span className={styles.colNum} title="Average total units sold across all days">Sold Units</span>
+            <span className={styles.colNum} title="Average unsold inventory remaining (machine + storage)">Unsold Units</span>
+            <span className={styles.colNum} title="Average number of times products were swapped in machine slots">Product<br/>Swaps</span>
+            <span className={styles.colNum} title="Average number of days the agent operated">Operating Days</span>
+            <span className={styles.colNum} title="Average number of tool calls made by the agent">#Tool<br/>Calls</span>
+            <span className={styles.colNum} title="Average LLM API cost in USD">LLM Cost</span>
           </div>
 
           {sorted.map((entry, i) => {
@@ -229,11 +284,13 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                     <span className={styles.modelName}>{entry.model}</span>
                   </span>
                   <span className={styles.colNum}>{entry.runs}</span>
-                  <span className={`${styles.colNum} ${styles.highlight}`}>${fmt(entry.avgNetWorth)}</span>
-                  <span className={`${styles.colNum} ${entry.avgProfit >= 0 ? styles.green : styles.red}`}>
+                  <span className={`${styles.colNum} ${entry.avgProfit >= 0 ? styles.green : styles.red} ${styles.highlight}`}>
                     {entry.avgProfit >= 0 ? '+' : ''}${fmt(entry.avgProfit)}
                   </span>
+                  <span className={styles.colNum}>${fmt(entry.avgNetWorth)}</span>
                   <span className={styles.colNum}>{Math.round(entry.avgUnitsSold)}</span>
+                  <span className={styles.colNum}>{Math.round(entry.avgUnsoldUnits ?? 0)}</span>
+                  <span className={styles.colNum}>{Math.round(entry.avgProductSwaps ?? 0)}</span>
                   <span className={styles.colNum}>{fmt(entry.avgDaysSurvived)}</span>
                   <span className={styles.colNum}>{Math.round(entry.avgToolCalls ?? 0)}</span>
                   <span className={`${styles.colNum} ${styles.yellow}`}>
@@ -253,11 +310,13 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                       <span className={styles.runId}>{run.startedAt ? new Date(run.startedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : run.runId}</span>
                     </span>
                     <span className={styles.colNum}>1</span>
-                    <span className={`${styles.colNum} ${styles.highlight}`}>${run.netWorth?.toFixed(2)}</span>
-                    <span className={`${styles.colNum} ${run.profit >= 0 ? styles.green : styles.red}`}>
+                    <span className={`${styles.colNum} ${run.profit >= 0 ? styles.green : styles.red} ${styles.highlight}`}>
                       {run.profit >= 0 ? '+' : ''}${run.profit?.toFixed(2)}
                     </span>
+                    <span className={styles.colNum}>${run.netWorth?.toFixed(2)}</span>
                     <span className={styles.colNum}>{run.unitsSold}</span>
+                    <span className={styles.colNum}>{run.unsoldUnits ?? '—'}</span>
+                    <span className={styles.colNum}>{run.productSwaps ?? '—'}</span>
                     <span className={styles.colNum}>{run.daysSurvived}</span>
                     <span className={styles.colNum}>{run.toolCallCount ?? '—'}</span>
                     <span className={`${styles.colNum} ${styles.yellow}`}>

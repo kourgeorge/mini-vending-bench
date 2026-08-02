@@ -459,9 +459,12 @@ async function main() {
         saveState(runOutputDir, stateAfterAgent);
 
         // Log daily summary to file
+        const netWorth = calculateNetWorth(stateAfterAgent, products);
         const summary = {
           day,
           balance: stateAfterAgent.finances.balance,
+          profit: stateAfterAgent.finances.total_revenue - stateAfterAgent.finances.total_expenses,
+          netWorth: netWorth,
           units_sold: dayUnitsSold,
           revenue: dayRevenue,
           deliveries_received: stateAfterAgent.deliveries_received_today || 0,
