@@ -337,6 +337,40 @@
       overflow: hidden;
     }
 
+    /* ── FAQ ─────────────────────────────────────────────────── */
+    .faq { display: flex; flex-direction: column; gap: 0; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      padding: 22px 0 8px;
+    }
+    .faq-a {
+      font-size: 13px; color: var(--text-muted); line-height: 1.65;
+      padding-bottom: 22px; max-width: 820px;
+    }
+    .faq-a code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px; color: var(--accent-light);
+      background: var(--surface2); padding: 1px 6px; border-radius: 4px;
+    }
+    .faq-a ul {
+      list-style: none; margin-top: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .faq-a ul li { padding-left: 18px; position: relative; }
+    .faq-a ul li::before {
+      content: '·'; position: absolute; left: 6px;
+      color: var(--accent-light); font-size: 16px; line-height: 1;
+    }
+    .observed-box {
+      margin-top: 12px;
+      background: rgba(99,102,241,.06); border: 1px solid rgba(99,102,241,.2);
+      border-radius: 8px; padding: 14px 16px;
+      font-size: 12px; color: var(--text-muted); line-height: 1.6;
+    }
+    .observed-box strong { color: var(--accent-light); }
+
     /* ── Footer ─────────────────────────────────────────── */
     footer {
       border-top: 1px solid var(--border);
@@ -393,6 +427,7 @@
       <a href="#supervision">Supervision</a>
       <a href="#evaluation">Evaluation</a>
       <a href="#config">Config</a>
+      <a href="#faq">FAQ</a>
     </div>
   </div>
 </nav>
@@ -1145,6 +1180,85 @@
         <div style="color:var(--text-dim);">//</div>
         <div style="color:var(--text-muted);">npm start bare <span style="color:var(--blue);">minimal</span></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ────────────────────────────────────────────────────── -->
+<section id="faq">
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <h2>Frequently asked questions</h2>
+    <p class="section-desc">Common questions about how the benchmark works, what information agents can access, and what interesting behaviors have been observed in the wild.</p>
+
+    <div class="faq">
+
+      <!-- Pricing info -->
+      <div class="faq-item">
+        <div class="faq-q">Does the agent know supplier prices upfront, or does it have to discover them?</div>
+        <div class="faq-a">
+          Both — partially. The <code>get_available_products</code> tool returns <em>typical wholesale</em> and <em>typical retail</em> prices for all 16 products. This gives the agent a baseline reference before contacting anyone. However, the actual price a specific supplier will charge can differ — suppliers have their own pricing behavior (honest, inflated, below-market) and may quote above or below the typical rate. To know what a particular supplier will actually charge, the agent needs to email them and read the response. Agents that skip this step and order at "typical" prices may overpay to premium-priced suppliers, or miss negotiated discounts entirely.
+        </div>
+      </div>
+
+      <!-- Supplier fields exposed -->
+      <div class="faq-item">
+        <div class="faq-q">What supplier information is visible to the agent?</div>
+        <div class="faq-a">
+          The <code>search_suppliers</code> tool exposes: supplier name, email address, products carried, <strong>type</strong> (<code>honest</code> / <code>negotiation</code> / <code>adversarial</code> / <code>unreliable</code>), lead time in days, and minimum order quantity.
+          <br><br>
+          What is <strong>not</strong> exposed: the supplier's internal <code>personality</code> description and <code>negotiation_style</code> field. For example, the agent can see that Premium Beverages is type <code>negotiation</code>, but it cannot read that they "always start high, expect negotiation, and reward loyalty." That context shapes how the supplier LLM responds to emails — so agents that engage in back-and-forth negotiation will discover it empirically through the conversation, not by reading a cheat sheet.
+          <br><br>
+          The <code>type</code> field alone is a meaningful signal: an agent can infer that <code>negotiation</code> suppliers are worth pushing back on, and that <code>adversarial</code> suppliers should be treated with suspicion.
+        </div>
+      </div>
+
+      <!-- place_order price -->
+      <div class="faq-item">
+        <div class="faq-q">When placing an order, does the agent specify the price it wants to pay?</div>
+        <div class="faq-a">
+          Yes. The <code>place_order</code> tool requires a <code>price_per_unit</code> for every item in the order. The system does not have a fixed price catalogue — whatever price the agent submits is what it pays. This means an agent that negotiated a discount must remember and use that discounted price when placing the order; one that skips negotiation and submits the typical wholesale price will pay whatever it enters. There is no validation against a "real" price — the onus is entirely on the agent to have done its homework.
+        </div>
+      </div>
+
+      <!-- Email negotiation -->
+      <div class="faq-item">
+        <div class="faq-q">How does the email negotiation loop work?</div>
+        <div class="faq-a">
+          The agent calls <code>send_email</code> with a message to a supplier's address. An LLM acting as that supplier generates a realistic reply — quoting prices, responding to counter-offers, or using pressure tactics — and the reply appears in the inbox immediately. The agent can read it, respond with a counter-offer, and repeat within the same day. Once a price is agreed, the agent places the order with <code>place_order</code> using that agreed price. The supplier model is separate from the agent model to ensure fairness regardless of which agent is under test.
+        </div>
+      </div>
+
+      <!-- Interesting behaviors -->
+      <div class="faq-item">
+        <div class="faq-q">What interesting agent behaviors have been observed?</div>
+        <div class="faq-a">
+          Several patterns have emerged across runs:
+
+          <ul>
+            <li><strong>Email theater.</strong> Some agents send negotiation emails as instructed but never act on the supplier's reply — ordering immediately at typical prices regardless of what the supplier quoted. The emails appear performative, checking a guideline box without driving any actual decision.</li>
+            <li><strong>Catalog shortcutting.</strong> Rather than contacting suppliers to get real quotes, some agents use <code>get_available_products</code> to retrieve typical wholesale prices and submit those directly in <code>place_order</code>. This works when a supplier's actual price happens to match the typical rate, but misses potential savings from negotiation and risks overpaying to suppliers who price above typical.</li>
+            <li><strong>Assortment manipulation as weather strategy.</strong> Instead of raising individual product prices on hot days (as guidelines suggest), some agents respond to heat by allocating more machine slots to beverages — effectively boosting revenue through volume rather than margin. This is more operationally complex but can be equally effective.</li>
+            <li><strong>Temporal end-game awareness.</strong> Well-performing agents explicitly recognize the 30-day deadline and stop placing new orders roughly 10–12 days before the end, switching to pure warehouse liquidation. The reasoning appears in agent messages as explicit acknowledgment of the terminal objective: maximizing final bank balance rather than continuing to operate.</li>
+            <li><strong>Empty machine recurrence.</strong> A common failure pattern is the machine selling completely out overnight — the agent didn't restock before ending the day. Some agents experience this 6–8 times across a run without learning a preventive restocking cadence.</li>
+            <li><strong>Supplier avoidance by type.</strong> Most agents correctly avoid <code>adversarial</code> and <code>unreliable</code> suppliers after reading the <code>type</code> field from <code>search_suppliers</code>, even without being explicitly told to. Adversarial and unreliable suppliers are rarely used in successful runs.</li>
+            <li><strong>Negotiation follow-through gap.</strong> Agents that negotiate and receive a discounted price don't always apply that exact price when placing orders. Cross-checking the agreed price against actual <code>place_order</code> tool calls is a reliable way to detect whether negotiation was genuine or rhetorical.</li>
+          </ul>
+
+          <div class="observed-box">
+            <strong>How to investigate:</strong> Each run stores a full <code>messages.jsonl</code> (agent reasoning), <code>tool_calls.jsonl</code> (exact parameters and results), and <code>daily_summary.jsonl</code>. Cross-referencing supplier email replies in messages against <code>price_per_unit</code> values in tool calls reveals whether negotiated prices were actually used.
+          </div>
+        </div>
+      </div>
+
+      <!-- Negotiation suppliers -->
+      <div class="faq-item">
+        <div class="faq-q">Which suppliers are worth negotiating with?</div>
+        <div class="faq-a">
+          The two suppliers typed <code>negotiation</code> — <strong>Premium Beverages Inc</strong> and <strong>Valley Vending Supply</strong> — are specifically designed to start with inflated quotes and drop their prices in response to persistent, polite negotiation or bulk commitments. Sending a single inquiry and accepting the first reply will result in above-market prices. Agents that push back, mention volume, or reference competitor pricing tend to unlock meaningfully lower rates. Honest suppliers (<code>honest</code> type) have less negotiation headroom but are reliable and transparent — useful as a price anchor.
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
