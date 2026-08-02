@@ -589,8 +589,15 @@ app.get('/api/runs/:subdir/:runId/final_score', (req, res) => {
   res.json(score);
 });
 
+// Serve built UI in production
+const DIST_DIR = resolve(__dirname, 'dist');
+if (existsSync(DIST_DIR)) {
+  app.use(express.static(DIST_DIR));
+  app.get('*', (_req, res) => res.sendFile(resolve(DIST_DIR, 'index.html')));
+}
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`API server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Reading run outputs from: ${RUN_OUTPUTS_DIR}`);
 });
