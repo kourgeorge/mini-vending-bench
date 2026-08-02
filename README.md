@@ -101,56 +101,11 @@ Output will be saved to `run_outputs/<subdirectory>/run_<timestamp>/`
 
 A real-time web UI lets you monitor benchmark runs, compare models, and browse run history.
 
-### Starting the Dashboard
-
-**Development mode — single terminal (recommended):**
-
 ```bash
 npm run ui:dev
 ```
 
-This uses `concurrently` to start both the API server (port 3001) and the Vite frontend (port 5173) together. Then open [http://localhost:5173](http://localhost:5173).
-
-**Development mode — two separate terminals:**
-
-```bash
-# Terminal 1 — API server (port 3001)
-npm run ui:api
-
-# Terminal 2 — React frontend with hot reload (port 5173)
-npm run ui:app
-```
-
-**Production / server deployment:**
-
-Use the scripts in `scripts/` to build the UI and serve everything from a single Node process on port 3002.
-
-```bash
-# Build the UI and start the server in the background
-./scripts/deploy.sh
-
-# Stop the running server
-./scripts/undeploy.sh
-```
-
-`deploy.sh` builds the Vite bundle, then starts `ui/server.js` in the background (via `nohup`). The PID is stored in `.vending.pid` and logs go to `server.log`. The dashboard is then available at `http://<host>:3002`.
-
-For a quick dev-mode start/stop without the Vite build step:
-
-```bash
-# Install dependencies and start API + Vite (logs to /tmp/mini-vending-bench.log)
-./scripts/start.sh
-
-# Stop start.sh processes
-./scripts/stop.sh
-```
-
-### Dashboard Features
-
-- **Leaderboard**: Ranked table of all runs by final score, with model, supervisor mode, profit, days survived, and cost
-- **Run Detail**: Per-run view with daily balance/revenue/sales charts and full agent message log
-- **Live Polling**: Active runs update automatically every 3 seconds
-- **Benchmark Description**: System architecture diagram and simulation overview
+Opens the leaderboard and run detail views at [http://localhost:5173](http://localhost:5173). See [`ui/README.md`](ui/README.md) for development and deployment details.
 
 ### Supervisor Configuration
 
@@ -395,17 +350,12 @@ mini-vending-bench/
 │   ├── tools/              # All agent tools
 │   ├── utils/              # Config loader, chart generator
 │   └── index.js            # Main entry point
-├── ui/                     # React + Vite dashboard (port 5173)
-│   └── server.js           # Express API server (port 3001)
+├── ui/                     # React + Vite dashboard — see ui/README.md
 ├── data/
 │   ├── products.json       # Product database
 │   ├── suppliers.json      # Supplier database
 │   └── supplier-prompts.js # Supplier system prompts
-├── scripts/
-│   ├── deploy.sh           # Build UI + start production server (port 3002)
-│   ├── undeploy.sh         # Stop production server
-│   ├── start.sh            # Start dev server (API + Vite)
-│   └── stop.sh             # Stop dev server
+├── scripts/                # Deploy/start/stop helpers — see ui/README.md
 ├── run_outputs/            # Generated run data
 ├── config.json             # Your configuration
 ├── config.example.json     # Configuration template
