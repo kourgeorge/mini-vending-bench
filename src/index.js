@@ -17,7 +17,6 @@ import { ConsoleLogger } from "./logging/console-logger.js";
 import { FileLogger } from "./logging/file-logger.js";
 import { SupplierResponseGenerator } from "./env/suppliers/response-generator.js";
 import { buildAgentInstructions } from "./agent/instructions.js";
-import { generateCharts } from "./utils/chart-generator.js";
 
 // Import tools
 import { getBalance, viewTransactions } from "./env/tools/finance.js";
@@ -574,11 +573,6 @@ async function main() {
       consoleLogger.info(`💸 Total LLM cost: $${totalCost.toFixed(4)} (${totalInput + totalOutput} tokens)`);
     }
   }
-
-  // Generate chart data
-  consoleLogger.info("Generating chart data...");
-  await generateCharts(runOutputDir);
-  consoleLogger.success("Chart data generated");
 
   consoleLogger.success(
     `\nBenchmark complete! Results saved to: ${runOutputDir}`

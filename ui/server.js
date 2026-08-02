@@ -38,6 +38,97 @@ function getRunStatus(runDir) {
   return 'completed';
 }
 
+
+/**
+ * Generate balance chart data from daily summaries
+ */
+function generateBalanceChartData(summaries) {
+  const days = summaries.map(s => s.day);
+  const balances = summaries.map(s => s.balance);
+
+  return {
+    title: 'Bank Balance Over Time',
+    type: 'line',
+    xAxis: {
+      label: 'Day',
+      data: days,
+    },
+    yAxis: {
+      label: 'Balance ($)',
+    },
+    series: [
+      {
+        name: 'Bank Balance',
+        data: balances,
+      },
+    ],
+  };
+}
+
+/**
+ * Generate units sold chart data from daily summaries
+ */
+function generateUnitsSoldChartData(summaries) {
+  const days = summaries.map(s => s.day);
+  const units = summaries.map(s => s.units_sold || 0);
+
+  return {
+    title: 'Daily Units Sold',
+    type: 'bar',
+    xAxis: {
+      label: 'Day',
+      data: days,
+    },
+    yAxis: {
+      label: 'Units Sold',
+    },
+    series: [
+      {
+        name: 'Units Sold',
+        data: units,
+      },
+    ],
+  };
+}
+
+/**
+ * Generate revenue chart data from daily summaries
+ */
+function generateRevenueChartData(summaries) {
+  const days = summaries.map(s => s.day);
+  const revenue = summaries.map(s => s.revenue || 0);
+
+  // Calculate cumulative values
+  let cumulativeRevenue = 0;
+  const cumulativeRevenueData = revenue.map(r => {
+    cumulativeRevenue += r;
+    return cumulativeRevenue;
+  });
+
+  return {
+    title: 'Revenue Over Time',
+    type: 'line',
+    xAxis: {
+      label: 'Day',
+      data: days,
+    },
+    yAxis: {
+      label: 'Revenue ($)',
+    },
+    series: [
+      {
+        name: 'Cumulative Revenue',
+        data: cumulativeRevenueData,
+      },
+      {
+        name: 'Daily Revenue',
+        data: revenue,
+      },
+    ],
+  };
+}
+
+
 // GET /api/runs — list all runs across all subdirectories
 app.get('/api/runs', (req, res) => {
   if (!existsSync(RUN_OUTPUTS_DIR)) return res.json([]);
@@ -150,6 +241,35 @@ app.get('/api/runs/:subdir/:runId/tool_calls', (req, res) => {
   const calls = readJSONL(join(runDir, 'tool_calls.jsonl'));
   res.json(calls);
 });
+
+
+// GET /api/runs/:subdir/:runId/balance_chart — compute balance chart data
+app.get('/api/runs/:subdir/:runId/balance_chart', (req, res) => {
+  const { subdir, runId } = req.params;
+  const runDir = join(RUN_OUTPUTS_DIR, subdir, runId);
+  const summaries = readJSONL(join(runDir, 'daily_summary.jsonl'));
+  if (summaries.length === 0) return res.json(null);
+  res.json(generateBalanceChartData(summaries));
+});
+
+// GET /api/runs/:subdir/:runId/units_sold_chart — compute units sold chart data
+app.get('/api/runs/:subdir/:runId/units_sold_chart', (req, res) => {
+  const { subdir, runId } = req.params;
+  const runDir = join(RUN_OUTPUTS_DIR, subdir, runId);
+  const summaries = readJSONL(join(runDir, 'daily_summary.jsonl'));
+  if (summaries.length === 0) return res.json(null);
+  res.json(generateUnitsSoldChartData(summaries));
+});
+
+// GET /api/runs/:subdir/:runId/revenue_chart — compute revenue chart data
+app.get('/api/runs/:subdir/:runId/revenue_chart', (req, res) => {
+  const { subdir, runId } = req.params;
+  const runDir = join(RUN_OUTPUTS_DIR, subdir, runId);
+  const summaries = readJSONL(join(runDir, 'daily_summary.jsonl'));
+  if (summaries.length === 0) return res.json(null);
+  res.json(generateRevenueChartData(summaries));
+});
+
 
 // GET /api/leaderboard — aggregate completed runs by model
 app.get('/api/leaderboard', (req, res) => {
@@ -336,15 +456,6 @@ Present on completed runs (if cost tracking was enabled). Aggregate LLM cost sum
 - \`totalCostUsd\` — total USD spent on LLM API calls
 - \`totalTokens\` — total tokens consumed across the entire run
 
-### \`balance_chart_data.json\`
-Pre-computed data for the balance-over-time chart. Array of \`{ day, balance }\` objects.
-
-### \`revenue_chart_data.json\`
-Pre-computed data for the daily revenue chart. Array of \`{ day, revenue }\` objects.
-
-### \`units_sold_chart_data.json\`
-Pre-computed data for the units-sold chart. Array of \`{ day, units_sold }\` objects.
-
 ---
 
 ## Simulation Overview
@@ -376,7 +487,6 @@ The agent is scored on final **net worth** (cash + inventory value) relative to 
   const knownFiles = [
     'state.json', 'config.json', 'final_score.json', 'final_cost.json',
     'daily_summary.jsonl', 'messages.jsonl', 'tool_calls.jsonl', 'costs.jsonl',
-    'balance_chart_data.json', 'revenue_chart_data.json', 'units_sold_chart_data.json',
   ];
   for (const file of knownFiles) {
     const filePath = join(runDir, file);

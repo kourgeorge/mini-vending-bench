@@ -9,13 +9,14 @@ fi
 
 PID=$(cat "$PID_FILE")
 
-if kill -0 "$PID" 2>/dev/null; then
-  echo "Stopping Mini Vending Bench (PID $PID and children)..."
-  # Kill the entire process group to catch all child processes (node, vite, etc.)
-  kill -- -"$PID" 2>/dev/null || kill "$PID"
-  rm "$PID_FILE"
-  echo "Done."
-else
-  echo "Process $PID is not running. Cleaning up stale PID file."
-  rm "$PID_FILE"
-fi
+echo "Stopping Mini Vending Bench..."
+
+# Kill the npm process if still running
+kill "$PID" 2>/dev/null
+
+# Kill processes holding the known ports (node API + vite)
+lsof -ti :3001 | xargs kill -9 2>/dev/null
+lsof -ti :5173 | xargs kill -9 2>/dev/null
+
+rm "$PID_FILE"
+echo "Done."

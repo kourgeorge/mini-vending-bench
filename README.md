@@ -228,9 +228,7 @@ Each run creates a directory in `run_outputs/<subdirectory>/run_[timestamp]/` co
 - **trace.txt**: Human-readable trace (if enabled)
 
 ### Chart Data
-- **balance_chart_data.json**: Bank balance over time data
-- **units_sold_chart_data.json**: Daily units sold data
-- **revenue_chart_data.json**: Revenue over time data
+
 
 These JSON files can be imported into any charting library (Chart.js, D3.js, Plotly, etc.) for visualization.
 
