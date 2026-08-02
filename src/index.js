@@ -388,9 +388,9 @@ async function main() {
       const response = result.finalOutput || "Agent completed";
       consoleLogger.llmResponse(response);
 
-      // Log token usage and cost
+      // Log token usage and cost (prefer LiteLLM-provided cost, fall back to manual calculation)
       const usage = extractUsage(result);
-      const cost = calculateCost(config.agent.model, usage.inputTokens, usage.outputTokens);
+      const cost = usage.costUsd ?? calculateCost(config.agent.model, usage.inputTokens, usage.outputTokens);
       fileLogger.appendJSONL('costs.jsonl', {
         timestamp: new Date().toISOString(),
         day: currentState.simulation.current_day,

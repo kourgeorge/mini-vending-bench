@@ -144,15 +144,18 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
               <XAxis
                 dataKey="x"
                 type="number"
-                name="Avg Cost"
-                tickFormatter={v => `$${v.toFixed(3)}`}
+                name="LLM Cost"
+                scale="log"
+                domain={['auto', 'auto']}
+                ticks={[0.01, 0.1, 1, 10, 100]}
+                tickFormatter={v => `$${v < 1 ? v.toFixed(2) : v.toFixed(0)}`}
                 tick={{ fontSize: 11, fill: 'var(--text-dim)' }}
-                label={{ value: 'Avg Cost (USD)', position: 'insideBottom', offset: -12, fontSize: 11, fill: 'var(--text-dim)' }}
+                label={{ value: 'LLM Cost (USD, log scale)', position: 'insideBottom', offset: -12, fontSize: 11, fill: 'var(--text-dim)' }}
               />
               <YAxis
                 dataKey="y"
                 type="number"
-                name="Avg Profit"
+                name="Profit"
                 tickFormatter={v => `$${v}`}
                 tick={{ fontSize: 11, fill: 'var(--text-dim)' }}
               />
@@ -201,12 +204,12 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
             <span className={styles.colRank}>#</span>
             <span className={styles.colModel}>Model</span>
             <span className={styles.colNum}>Runs</span>
-            <span className={styles.colNum}>Avg Net Worth</span>
-            <span className={styles.colNum}>Avg Profit</span>
-            <span className={styles.colNum}>Avg Units</span>
-            <span className={styles.colNum}>Avg Days</span>
-            <span className={styles.colNum}>Avg Tool Calls</span>
-            <span className={styles.colNum}>Avg Cost</span>
+            <span className={styles.colNum}>Net Worth</span>
+            <span className={styles.colNum}>Profit</span>
+            <span className={styles.colNum}>Sold Units</span>
+            <span className={styles.colNum}>Operating Days</span>
+            <span className={styles.colNum}>#Tool<br/>Calls</span>
+            <span className={styles.colNum}>LLM Cost</span>
           </div>
 
           {sorted.map((entry, i) => {
