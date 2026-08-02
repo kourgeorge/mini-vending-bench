@@ -10,8 +10,9 @@ fi
 PID=$(cat "$PID_FILE")
 
 if kill -0 "$PID" 2>/dev/null; then
-  echo "Stopping Mini Vending Bench (PID $PID)..."
-  kill "$PID"
+  echo "Stopping Mini Vending Bench (PID $PID and children)..."
+  # Kill the entire process group to catch all child processes (node, vite, etc.)
+  kill -- -"$PID" 2>/dev/null || kill "$PID"
   rm "$PID_FILE"
   echo "Done."
 else
