@@ -1,25 +1,20 @@
 #!/usr/bin/env bash
 
-stopped=0
+PID_FILE=/tmp/mini-vending-bench.pid
 
-# Find and kill the Express API server (server.js on port 3001)
-API_PIDS=$(lsof -ti tcp:3001 2>/dev/null)
-if [ -n "$API_PIDS" ]; then
-  echo "Stopping API server (port 3001) — PID(s): $API_PIDS"
-  echo "$API_PIDS" | xargs kill
-  stopped=$((stopped + 1))
+if [ ! -f "$PID_FILE" ]; then
+  echo "No PID file found at $PID_FILE — nothing to stop."
+  exit 0
 fi
 
-# Find and kill the Vite dev server (port 5173)
-VITE_PIDS=$(lsof -ti tcp:5173 2>/dev/null)
-if [ -n "$VITE_PIDS" ]; then
-  echo "Stopping Vite dev server (port 5173) — PID(s): $VITE_PIDS"
-  echo "$VITE_PIDS" | xargs kill
-  stopped=$((stopped + 1))
-fi
+PID=$(cat "$PID_FILE")
 
-if [ $stopped -eq 0 ]; then
-  echo "Nothing running on ports 3001 or 5173."
-else
+if kill -0 "$PID" 2>/dev/null; then
+  echo "Stopping Mini Vending Bench (PID $PID)..."
+  kill "$PID"
+  rm "$PID_FILE"
   echo "Done."
+else
+  echo "Process $PID is not running. Cleaning up stale PID file."
+  rm "$PID_FILE"
 fi

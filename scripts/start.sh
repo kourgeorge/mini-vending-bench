@@ -15,4 +15,6 @@ echo "  API server → http://localhost:3001"
 echo "  Dashboard  → http://localhost:5173"
 echo ""
 
-cd "$ROOT" && npm run ui:dev
+cd "$ROOT" && npm run ui:dev &
+echo $! > /tmp/mini-vending-bench.pid
+wait
