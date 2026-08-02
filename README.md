@@ -103,15 +103,15 @@ A real-time web UI lets you monitor benchmark runs, compare models, and browse r
 
 ### Starting the Dashboard
 
-**Option A — single terminal (recommended):**
+**Development mode — single terminal (recommended):**
 
 ```bash
 npm run ui:dev
 ```
 
-This uses `concurrently` to start both the API server and the Vite frontend together.
+This uses `concurrently` to start both the API server (port 3001) and the Vite frontend (port 5173) together. Then open [http://localhost:5173](http://localhost:5173).
 
-**Option B — two separate terminals:**
+**Development mode — two separate terminals:**
 
 ```bash
 # Terminal 1 — API server (port 3001)
@@ -121,7 +121,29 @@ npm run ui:api
 npm run ui:app
 ```
 
-Then open [http://localhost:5173](http://localhost:5173) in your browser.
+**Production / server deployment:**
+
+Use the scripts in `scripts/` to build the UI and serve everything from a single Node process on port 3002.
+
+```bash
+# Build the UI and start the server in the background
+./scripts/deploy.sh
+
+# Stop the running server
+./scripts/undeploy.sh
+```
+
+`deploy.sh` builds the Vite bundle, then starts `ui/server.js` in the background (via `nohup`). The PID is stored in `.vending.pid` and logs go to `server.log`. The dashboard is then available at `http://<host>:3002`.
+
+For a quick dev-mode start/stop without the Vite build step:
+
+```bash
+# Install dependencies and start API + Vite (logs to /tmp/mini-vending-bench.log)
+./scripts/start.sh
+
+# Stop start.sh processes
+./scripts/stop.sh
+```
 
 ### Dashboard Features
 
@@ -379,6 +401,11 @@ mini-vending-bench/
 │   ├── products.json       # Product database
 │   ├── suppliers.json      # Supplier database
 │   └── supplier-prompts.js # Supplier system prompts
+├── scripts/
+│   ├── deploy.sh           # Build UI + start production server (port 3002)
+│   ├── undeploy.sh         # Stop production server
+│   ├── start.sh            # Start dev server (API + Vite)
+│   └── stop.sh             # Stop dev server
 ├── run_outputs/            # Generated run data
 ├── config.json             # Your configuration
 ├── config.example.json     # Configuration template
