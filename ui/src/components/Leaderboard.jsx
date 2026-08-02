@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, LabelList, ReferenceLine,
+  Tooltip, ResponsiveContainer, LabelList, ReferenceLine,
 } from 'recharts';
 import styles from './Leaderboard.module.css';
 
@@ -167,7 +167,6 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                 );
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)' }} formatter={name => name.split('/').pop()} />
             {data.map((m, i) => (
               <Line
                 key={m.model}
@@ -199,7 +198,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                 name="LLM Cost"
                 scale="log"
                 domain={['auto', 'auto']}
-                ticks={[0.01, 0.1, 1, 10, 100]}
+                ticks={[0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100]}
                 tickFormatter={v => `$${v < 1 ? v.toFixed(2) : v.toFixed(0)}`}
                 tick={{ fontSize: 11, fill: 'var(--text-dim)' }}
                 label={{ value: 'LLM Cost (USD, log scale)', position: 'insideBottom', offset: -12, fontSize: 11, fill: 'var(--text-dim)' }}
