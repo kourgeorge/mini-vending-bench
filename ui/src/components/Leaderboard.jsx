@@ -52,7 +52,6 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
     { key: 'avgUnitsSold', label: 'Units Sold' },
     { key: 'avgDaysSurvived', label: 'Days Survived' },
     { key: 'avgToolCalls', label: 'Tool Calls' },
-    { key: 'successRate', label: 'Success Rate' },
   ];
 
   const sorted = [...data].sort((a, b) => b[sortKey] - a[sortKey]);
@@ -207,7 +206,6 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
             <span className={styles.colNum}>Avg Units</span>
             <span className={styles.colNum}>Avg Days</span>
             <span className={styles.colNum}>Avg Tool Calls</span>
-            <span className={styles.colNum}>Success</span>
             <span className={styles.colNum}>Avg Cost</span>
           </div>
 
@@ -235,9 +233,6 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                   <span className={styles.colNum}>{Math.round(entry.avgUnitsSold)}</span>
                   <span className={styles.colNum}>{fmt(entry.avgDaysSurvived)}</span>
                   <span className={styles.colNum}>{Math.round(entry.avgToolCalls ?? 0)}</span>
-                  <span className={`${styles.colNum} ${entry.successRate === 1 ? styles.green : entry.successRate === 0 ? styles.red : ''}`}>
-                    {pct(entry.successRate)}
-                  </span>
                   <span className={`${styles.colNum} ${styles.yellow}`}>
                     {entry.avgCostUsd != null ? `$${entry.avgCostUsd.toFixed(4)}` : '—'}
                   </span>
@@ -262,7 +257,6 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
                     <span className={styles.colNum}>{run.unitsSold}</span>
                     <span className={styles.colNum}>{run.daysSurvived}</span>
                     <span className={styles.colNum}>{run.toolCallCount ?? '—'}</span>
-                    <span className={styles.colNum}>—</span>
                     <span className={`${styles.colNum} ${styles.yellow}`}>
                       {run.totalCostUsd != null ? `$${run.totalCostUsd.toFixed(4)}` : '—'}
                     </span>
