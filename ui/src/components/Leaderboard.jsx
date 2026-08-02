@@ -227,7 +227,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
               />
               {frontierData.map(d => (
                 <Scatter key={d.fullModel} data={[d]} fill={d.color}>
-                  <LabelList dataKey="model" position="top" style={{ fontSize: 10, fill: d.color }} />
+                  <LabelList dataKey="model" position="top" style={{ fontSize: 12, fill: d.color }} />
                 </Scatter>
               ))}
             </ScatterChart>

@@ -132,7 +132,7 @@
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-dim);
   letter-spacing: 0.05em;
 }
@@ -167,7 +167,7 @@
 
 .rankNum {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-dim);
 }
 
@@ -187,7 +187,7 @@
 
 .modelName {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text);
   font-family: monospace;
   white-space: nowrap;
@@ -241,12 +241,12 @@
 
 .highlight {
   color: var(--text);
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.green { color: var(--green) !important; font-weight: 600; }
-.red { color: var(--red) !important; font-weight: 600; }
-.yellow { color: var(--yellow) !important; font-weight: 600; }
+.green { color: var(--green) !important; }
+.red { color: var(--red) !important; }
+.yellow { color: var(--yellow) !important; }
 
 /* Expanded sub-rows */
 .subRow {
