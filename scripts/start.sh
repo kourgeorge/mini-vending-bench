@@ -15,6 +15,6 @@ echo "  API server → http://localhost:3001"
 echo "  Dashboard  → http://localhost:5173"
 echo ""
 
-cd "$ROOT" && npm run ui:dev &
+cd "$ROOT" && npm run ui:dev > /tmp/mini-vending-bench.log 2>&1 &
 echo $! > /tmp/mini-vending-bench.pid
-wait
+echo "Started (PID $(cat /tmp/mini-vending-bench.pid)). Logs: /tmp/mini-vending-bench.log"
