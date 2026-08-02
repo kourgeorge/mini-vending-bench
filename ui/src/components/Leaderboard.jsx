@@ -119,7 +119,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
       )}
 
       {/* Shared metric toggle for both charts */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 16, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '4px 0' }}>
         <span style={{ fontSize: 13, color: 'var(--text-muted)', marginRight: 8, alignSelf: 'center' }}>Chart Metric:</span>
         <button
           className={`${styles.sortBtn} ${chartMetric === 'profit' ? styles.sortActive : ''}`}
