@@ -56,7 +56,7 @@ export default function RunBrowser({ onSelect }) {
         <section key={subdir} className={styles.section}>
           <h2 className={styles.subdir}>{subdir} <span className={styles.subdirCount}>{subdirRuns.length} runs</span></h2>
 
-          <div className={styles.table}>
+          <div className={styles.tableWrapper}><div className={styles.table}>
             <div className={styles.thead}>
               <span>Started</span>
               <span>Run</span>
@@ -101,7 +101,7 @@ export default function RunBrowser({ onSelect }) {
                 </span>
               </button>
             ))}
-          </div>
+          </div></div>
         </section>
       ))}
     </div>

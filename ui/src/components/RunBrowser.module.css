@@ -55,11 +55,16 @@
 }
 
 /* Table */
-.table {
+.tableWrapper {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  min-width: 900px;
 }
 
 .thead {
@@ -87,7 +92,7 @@
   border-left: none;
   border-right: none;
   border-top: none;
-  width: 100%;
+  width: auto;
   transition: background 0.12s;
   color: var(--text);
 }

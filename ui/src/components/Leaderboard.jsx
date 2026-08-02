@@ -252,7 +252,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
           </div>
         </div>
 
-        <div className={styles.table}>
+        <div className={styles.tableScrollWrapper}><div className={styles.table}>
           <div className={styles.tableHead}>
             <span className={styles.colRank} title="Ranking position">#</span>
             <span className={styles.colModel} title="AI model name">Model</span>
@@ -327,7 +327,7 @@ export default function Leaderboard({ onSelectRun, embedded = false }) {
               </div>
             );
           })}
-        </div>
+        </div></div>
       </div>
     </div>
   );
