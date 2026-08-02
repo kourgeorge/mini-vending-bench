@@ -596,7 +596,7 @@ if (existsSync(DIST_DIR)) {
   app.get('*', (_req, res) => res.sendFile(resolve(DIST_DIR, 'index.html')));
 }
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Reading run outputs from: ${RUN_OUTPUTS_DIR}`);

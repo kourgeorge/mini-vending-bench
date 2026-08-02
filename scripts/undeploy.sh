@@ -12,4 +12,4 @@ fi
 
 kill "$(cat "$PID_FILE")" 2>/dev/null && echo "Stopped." || echo "Process already gone."
 rm -f "$PID_FILE"
-lsof -ti :3001 | xargs kill -9 2>/dev/null || true
+lsof -ti :3002 | xargs kill -9 2>/dev/null || true
