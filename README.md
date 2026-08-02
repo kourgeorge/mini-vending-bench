@@ -220,17 +220,12 @@ Each run creates a directory in `run_outputs/<subdirectory>/run_[timestamp]/` co
 ### Files
 - **state.json**: Final simulation state
 - **config.json**: Configuration used (API keys sanitized)
-- **final_score.json**: Final metrics and score
+- **final_score.json**: Performance metrics (balance, profit, revenue, etc.)
+- **final_cost.json**: LLM usage costs and token counts
+- **daily_summary.jsonl**: Daily performance summary
 - **messages.jsonl**: All agent messages
 - **tool_calls.jsonl**: All tool calls and results
-- **events.jsonl**: Simulation events
-- **daily_summary.jsonl**: Daily performance summary
-- **trace.txt**: Human-readable trace (if enabled)
-
-### Chart Data
-
-
-These JSON files can be imported into any charting library (Chart.js, D3.js, Plotly, etc.) for visualization.
+- **costs.jsonl**: Daily LLM cost breakdown
 
 ## Available Tools
 

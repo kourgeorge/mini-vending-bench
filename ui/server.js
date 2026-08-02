@@ -452,9 +452,14 @@ Present only on completed runs. Contains the final performance metrics:
 - \`generated_at\` — ISO timestamp when the score was computed
 
 ### \`final_cost.json\`
-Present on completed runs (if cost tracking was enabled). Aggregate LLM cost summary:
-- \`totalCostUsd\` — total USD spent on LLM API calls
-- \`totalTokens\` — total tokens consumed across the entire run
+Present on completed runs. Aggregate LLM cost summary:
+- \`model\` — the LLM model used
+- \`totalInputTokens\` — total input/prompt tokens
+- \`totalOutputTokens\` — total output/completion tokens
+- \`totalTokens\` — total tokens consumed
+- \`totalCostUsd\` — total USD spent on LLM API calls (null if pricing unavailable)
+- \`days\` — number of days tracked
+- \`generated_at\` — ISO timestamp when computed
 
 ---
 
