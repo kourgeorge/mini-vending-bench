@@ -24,19 +24,16 @@ function HeroStats() {
         <span className={styles.heroStatNum}>{modelCount}</span>
         <span className={styles.heroStatLabel}>Models Tested</span>
       </div>
-      <div className={styles.heroStatDiv} />
       <div className={styles.heroStat}>
         <span className={styles.heroStatNum}>{totalRuns}</span>
         <span className={styles.heroStatLabel}>Total Runs</span>
       </div>
-      <div className={styles.heroStatDiv} />
       <div className={styles.heroStat}>
         <span className={styles.heroStatNum}>
           {bestNetWorth != null ? `$${bestNetWorth.toFixed(0)}` : '—'}
         </span>
         <span className={styles.heroStatLabel}>Best Net Worth</span>
       </div>
-      <div className={styles.heroStatDiv} />
       <div className={styles.heroStat}>
         <span className={styles.heroStatNum}>30</span>
         <span className={styles.heroStatLabel}>Day Simulation</span>
@@ -74,7 +71,7 @@ export default function App() {
               href="#"
               className={`${styles.navLink} ${page === 'home' ? styles.navLinkActive : ''}`}
               onClick={e => { e.preventDefault(); setPage('home'); }}
-            >Leaderboard</a>
+            >Home</a>
             <a
               href="#"
               className={`${styles.navLink} ${page === 'runs' ? styles.navLinkActive : ''}`}
@@ -126,13 +123,6 @@ export default function App() {
 
           <section className={styles.leaderboardSection}>
             <div className={styles.containerWide}>
-              <div className={styles.sectionHead}>
-                <span className={styles.sectionEyebrow}>Rankings</span>
-                <h2 className={styles.sectionTitle}>Model Leaderboard</h2>
-                <p className={styles.sectionDesc}>
-                  Ranked by average net worth across all completed runs. Click any model to expand individual run details.
-                </p>
-              </div>
               <Leaderboard embedded onSelectRun={handleSelectRun} />
             </div>
           </section>
