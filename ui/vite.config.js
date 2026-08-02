@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['vending.kour.me'],
     proxy: {
       '/api': 'http://localhost:3001',
     },
